@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tawa</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="site-shell">
+    <header class="brand-box" aria-label="tawa">
+      <span>tawa</span>
+    </header>
+
+    <section id="homePage" class="page">
+      <div class="calendar-card">
+        <h1>Select a menu date</h1>
+        <div id="calendar" class="calendar" aria-label="Menu calendar"></div>
+        <p class="calendar-help">Today is unavailable. The next two days are available for ordering.</p>
+      </div>
+    </section>
+
+    <section id="orderPage" class="page hidden">
+      <button id="homeTopButton" class="home-button" type="button">Home Page</button>
+
+      <div class="order-header">
+        <h1 id="selectedDateTitle"></h1>
+        <p id="menuLoading" class="status">Loading menus…</p>
+      </div>
+
+      <div id="menusContainer" class="menus-container"></div>
+
+      <form id="orderForm" class="customer-form" novalidate>
+        <h2>Delivery details</h2>
+
+        <label>
+          Surname *
+          <input id="surname" name="surname" type="text" autocomplete="family-name" required>
+        </label>
+
+        <label>
+          Street *
+          <select id="street" name="street" required>
+            <option value="Vereinsstraße">Vereinsstraße</option>
+          </select>
+        </label>
+
+        <label>
+          House Number *
+          <input id="houseNumber" name="houseNumber" type="text" autocomplete="address-line2" required>
+        </label>
+
+        <label>
+          Zipcode *
+          <input id="zipcode" name="zipcode" type="text" inputmode="numeric" autocomplete="postal-code" required>
+        </label>
+
+        <label>
+          Email *
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </label>
+
+        <label>
+          Description
+          <textarea id="description" name="description" rows="4" placeholder="Optional"></textarea>
+        </label>
+
+        <div class="order-summary">
+          <span>Total</span>
+          <strong id="totalPrice">0.00 €</strong>
+        </div>
+
+        <button id="orderButton" class="order-button" type="submit">Order</button>
+      </form>
+
+      <button id="homeBottomButton" class="home-button" type="button">Home Page</button>
+    </section>
+  </main>
+
+  <div id="confirmationModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle">
+    <div class="modal-card">
+      <h2 id="confirmationTitle">Order confirmed</h2>
+      <p>Your order has been received. You will receive a confirmation email and can contact us by replying to that email if you need to change or cancel the order.</p>
+      <button id="confirmationHomeButton" class="home-button" type="button">Home Page</button>
+    </div>
+  </div>
+
+  <div id="errorModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="errorTitle">
+    <div class="modal-card">
+      <h2 id="errorTitle">Something went wrong</h2>
+      <p id="errorMessage"></p>
+      <button id="errorCloseButton" class="home-button" type="button">Close</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

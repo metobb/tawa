@@ -1,0 +1,290 @@
+:root {
+  --black: #111;
+  --white: #fff;
+  --gray: #d8d8d8;
+  --light-gray: #f4f4f4;
+  --red: #c62828;
+  --green: #2e7d32;
+  --border: 2px solid var(--black);
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--white);
+  color: var(--black);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.site-shell {
+  width: min(100% - 24px, 900px);
+  margin: 24px auto 48px;
+}
+
+.brand-box {
+  width: min(100%, 680px);
+  margin: 0 auto 28px;
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--border);
+  background: var(--white);
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.page {
+  display: block;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.calendar-card,
+.customer-form,
+.menu-card {
+  border: var(--border);
+  background: var(--white);
+  border-radius: var(--radius);
+}
+
+.calendar-card {
+  padding: 22px;
+}
+
+h1,
+h2 {
+  margin-top: 0;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-weight: 700;
+  padding: 8px 0;
+}
+
+.calendar-day {
+  min-height: 52px;
+  border: 1px solid #aaa;
+  background: var(--light-gray);
+  color: #888;
+  border-radius: 7px;
+  cursor: not-allowed;
+}
+
+.calendar-day.active {
+  color: var(--green);
+  border-color: var(--green);
+  background: #f3fff4;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.calendar-day.today {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.calendar-day.empty {
+  border: 0;
+  background: transparent;
+}
+
+.calendar-help,
+.status {
+  color: #666;
+}
+
+.home-button,
+.order-button {
+  width: 100%;
+  min-height: 50px;
+  border: var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.home-button {
+  background: #ddd;
+  color: var(--black);
+}
+
+.order-button {
+  margin-top: 18px;
+  background: var(--black);
+  color: var(--white);
+}
+
+.home-button:hover,
+.order-button:hover {
+  opacity: 0.86;
+}
+
+.order-header {
+  margin: 24px 0;
+}
+
+.menus-container {
+  display: grid;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.menu-card {
+  overflow: hidden;
+}
+
+.menu-title {
+  margin: 0;
+  padding: 16px;
+  text-align: center;
+  border-bottom: var(--border);
+  font-size: 25px;
+}
+
+.meals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.meal {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.meal img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  border-radius: 7px;
+  background: #eee;
+}
+
+.meal-name {
+  margin: 10px 0 0;
+  font-weight: 600;
+}
+
+.menu-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-top: var(--border);
+  background: #fafafa;
+}
+
+.menu-price {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.menu-amount {
+  min-width: 120px;
+  min-height: 44px;
+  border: 1px solid #555;
+  border-radius: 7px;
+  background: var(--white);
+  padding: 0 10px;
+}
+
+.customer-form {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
+.customer-form label {
+  display: grid;
+  gap: 7px;
+  font-weight: 700;
+}
+
+.customer-form input,
+.customer-form select,
+.customer-form textarea {
+  width: 100%;
+  border: 1px solid #777;
+  border-radius: 7px;
+  padding: 11px 12px;
+  background: var(--white);
+}
+
+.order-summary {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+  font-size: 20px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.modal-card {
+  width: min(100%, 520px);
+  background: var(--white);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 26px;
+}
+
+@media (max-width: 600px) {
+  .site-shell {
+    width: min(100% - 14px, 900px);
+    margin-top: 10px;
+  }
+
+  .brand-box {
+    min-height: 64px;
+    font-size: 34px;
+    margin-bottom: 16px;
+  }
+
+  .calendar {
+    gap: 4px;
+  }
+
+  .calendar-day {
+    min-height: 44px;
+  }
+
+  .menu-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .menu-amount {
+    width: 100%;
+  }
+}
