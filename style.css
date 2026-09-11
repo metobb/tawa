@@ -34,10 +34,10 @@ textarea {
   margin: 24px auto 48px;
 }
 
-/* Brand header: same width/position as the previous tawa box, but without a border. */
+/* Brand header: extends from the left edge to the right edge of the page. */
 .brand-header {
-  width: min(100%, 680px);
-  margin: 0 auto 28px;
+  width: 100vw;
+  margin: 0 0 28px calc(50% - 50vw);
   min-height: 78px;
   display: flex;
   align-items: center;
@@ -47,6 +47,7 @@ textarea {
   font-size: 42px;
   font-weight: 700;
   letter-spacing: 0.08em;
+  border-radius: 0 0 18px 18px;
 }
 
 .page {
