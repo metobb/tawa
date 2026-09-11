@@ -14,6 +14,8 @@ const menuLoading = document.getElementById("menuLoading");
 const orderForm = document.getElementById("orderForm");
 const totalPrice = document.getElementById("totalPrice");
 const orderButton = document.getElementById("orderButton");
+const deliveryToggle = document.getElementById("deliveryToggle");
+const deliveryFields = document.getElementById("deliveryFields");
 const confirmationModal = document.getElementById("confirmationModal");
 const errorModal = document.getElementById("errorModal");
 const errorMessage = document.getElementById("errorMessage");
@@ -25,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderCalendar();
   bindHomeButtons();
   orderForm.addEventListener("submit", submitOrder);
+  deliveryToggle.addEventListener("click", toggleDeliveryDetails);
 });
 
 function localDateKey(date = new Date()) {
@@ -197,6 +200,13 @@ function renderMenus() {
   updateTotal();
 }
 
+function toggleDeliveryDetails() {
+  const expanded = deliveryToggle.getAttribute("aria-expanded") === "true";
+  deliveryToggle.setAttribute("aria-expanded", String(!expanded));
+  deliveryFields.hidden = expanded;
+  deliveryToggle.classList.toggle("expanded", !expanded);
+}
+
 function getSelectedOrders() {
   return [...document.querySelectorAll(".menu-amount")]
     .map(select => ({
@@ -286,6 +296,10 @@ function goHome() {
   orderPage.classList.add("hidden");
   homePage.classList.remove("hidden");
   orderForm.reset();
+  document.getElementById("zipcode").value = "20357";
+  deliveryToggle.setAttribute("aria-expanded", "false");
+  deliveryFields.hidden = true;
+  deliveryToggle.classList.remove("expanded");
   menusContainer.innerHTML = "";
   currentMenus = [];
   selectedMenuDate = "";

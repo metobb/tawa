@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="site-shell">
-    <header class="brand-box" aria-label="tawa">
+    <header class="brand-header" aria-label="tawa">
       <span>tawa</span>
     </header>
 
@@ -31,39 +31,44 @@
       <div id="menusContainer" class="menus-container"></div>
 
       <form id="orderForm" class="customer-form" novalidate>
-        <h2>Delivery details</h2>
+        <button id="deliveryToggle" class="delivery-toggle" type="button" aria-expanded="false" aria-controls="deliveryFields">
+          <span>Delivery Details</span>
+          <span class="delivery-chevron" aria-hidden="true">▼</span>
+        </button>
 
-        <label>
-          Surname *
-          <input id="surname" name="surname" type="text" autocomplete="family-name" required>
-        </label>
+        <div id="deliveryFields" class="delivery-fields" hidden>
+          <label>
+            Surname *
+            <input id="surname" name="surname" type="text" autocomplete="family-name" required>
+          </label>
 
-        <label>
-          Street *
-          <select id="street" name="street" required>
-            <option value="Vereinsstraße">Vereinsstraße</option>
-          </select>
-        </label>
+          <label>
+            Street *
+            <select id="street" name="street" required>
+              <option value="Vereinsstraße">Vereinsstraße</option>
+            </select>
+          </label>
 
-        <label>
-          House Number *
-          <input id="houseNumber" name="houseNumber" type="text" autocomplete="address-line2" required>
-        </label>
+          <label>
+            House Number *
+            <input id="houseNumber" name="houseNumber" type="text" autocomplete="address-line2" required>
+          </label>
 
-        <label>
-          Zipcode *
-          <input id="zipcode" name="zipcode" type="text" inputmode="numeric" autocomplete="postal-code" required>
-        </label>
+          <label>
+            ZIP Code *
+            <input id="zipcode" name="zipcode" type="text" value="20357" inputmode="numeric" autocomplete="postal-code" readonly required>
+          </label>
 
-        <label>
-          Email *
-          <input id="email" name="email" type="email" autocomplete="email" required>
-        </label>
+          <label>
+            Email *
+            <input id="email" name="email" type="email" autocomplete="email" required>
+          </label>
 
-        <label>
-          Description
-          <textarea id="description" name="description" rows="4" placeholder="Optional"></textarea>
-        </label>
+          <label>
+            Description
+            <textarea id="description" name="description" rows="4" placeholder="Optional"></textarea>
+          </label>
+        </div>
 
         <div class="order-summary">
           <span>Total</span>
