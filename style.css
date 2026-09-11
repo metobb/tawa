@@ -367,8 +367,4 @@ h2 {
     padding-left: 16px;
     padding-right: 16px;
   }
-}
 
-.delivery-fields[hidden] {
-  display: none !important;
-}
