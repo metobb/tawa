@@ -243,20 +243,20 @@ function sendAdminEmail(orderId, payload, orders, total, dateOfOrder) {
 
   MailApp.sendEmail(
     CONFIG.ADMIN_EMAIL,
-    `tawa order ${orderId} – ${payload.dateOfMenu}`,
+    `tawa Bestellung ${orderId} – ${payload.dateOfMenu}`,
     lines.join("\n")
   );
 }
 
 function sendCustomerEmail(orderId, payload, orders, total, dateOfOrder) {
   const lines = [
-    "Thank you for your tawa order.",
+    "Vielen Dank für Ihre tawa Bestellung.",
     "",
-    `Order ID: ${orderId}`,
-    `Date of order: ${dateOfOrder}`,
-    `Date of menu: ${payload.dateOfMenu}`,
+    `Bestellnummer: ${orderId}`,
+    `Bestellungsdatum: ${dateOfOrder}`,
+    `Datum von Menüs: ${payload.dateOfMenu}`,
     "",
-    "Ordered menus:"
+    "Bestellung:"
   ];
 
   orders.forEach(item => {
@@ -269,7 +269,7 @@ function sendCustomerEmail(orderId, payload, orders, total, dateOfOrder) {
     "",
     `Total: ${total.toFixed(2)} €`,
     "",
-    "If you need to change or cancel the order, please reply to this email and include your Order ID."
+    "Sollten Sie die Bestellung ändern oder stornieren wollen, antworten Sie bitte auf diese E-Mail und geben Sie dabei Ihre Bestellnummer an."
   );
 
   MailApp.sendEmail(
