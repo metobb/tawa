@@ -243,7 +243,7 @@ function sendAdminEmail(orderId, payload, orders, total, dateOfOrder) {
 
   MailApp.sendEmail(
     CONFIG.ADMIN_EMAIL,
-    `tawa Bestellung ${orderId} – ${payload.dateOfMenu}`,
+    `tawa Bestellung – ${payload.dateOfMenu}`,
     lines.join("\n")
   );
 }
@@ -274,7 +274,7 @@ function sendCustomerEmail(orderId, payload, orders, total, dateOfOrder) {
 
   MailApp.sendEmail(
     payload.email,
-    `Bestellbestätigung von tawa ${orderId}`,
+    `Bestellbestätigung von tawa – ${payload.dateOfMenu}`,
     lines.join("\n"),
     {
       replyTo: CONFIG.ADMIN_EMAIL,
