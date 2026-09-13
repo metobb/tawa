@@ -37,7 +37,7 @@ function doGet(e) {
 
       return jsonResponse({
         ok: true,
-        menus: getMenusForDate(date)
+        menus: getMenüsForDate(date)
       });
     }
 
@@ -78,7 +78,7 @@ function doPost(e) {
   }
 }
 
-function getMenusForDate(dateString) {
+function getMenüsForDate(dateString) {
   const sheet = SpreadsheetApp
     .openById(CONFIG.MENU_SPREADSHEET_ID)
     .getSheetByName(CONFIG.MENU_SHEET_NAME);
@@ -90,12 +90,12 @@ function getMenusForDate(dateString) {
 
   const headers = values[0].map(String);
   const dateCol = headers.indexOf("Date");
-  const menuCol = headers.indexOf("Menu");
+  const menuCol = headers.indexOf("Menü");
   const mealCol = headers.indexOf("Meal");
   const pictureCol = headers.indexOf("Meal Picture");
 
   if ([dateCol, menuCol, mealCol, pictureCol].some(index => index === -1)) {
-    throw new Error("tawa_menu must contain: Date, Menu, Meal, Meal Picture.");
+    throw new Error("tawa_menu must contain: Date, Menü, Meal, Meal Picture.");
   }
 
   const grouped = {};
@@ -137,7 +137,7 @@ function saveOrder(payload) {
   );
 
   const orderId = Utilities.getUuid();
-  const totalOrderPrice = orders.reduce(
+  const totalOrderPreis = orders.reduce(
     (sum, item) => sum + Number(item.amount) * CONFIG.PRICE_PER_MENU,
     0
   );
@@ -152,7 +152,7 @@ function saveOrder(payload) {
     item.menu,
     Number(item.amount),
     dateOfOrder,
-    payload.dateOfMenu,
+    payload.dateOfMenü,
     Number(item.amount) * CONFIG.PRICE_PER_MENU,
     payload.surname,
     payload.street,
@@ -171,8 +171,8 @@ function saveOrder(payload) {
     ).setValues(rows);
   }
 
-  sendAdminEmail(orderId, payload, orders, totalOrderPrice, dateOfOrder);
-  sendCustomerEmail(orderId, payload, orders, totalOrderPrice, dateOfOrder);
+  sendAdminEmail(orderId, payload, orders, totalOrderPreis, dateOfOrder);
+  sendCustomerEmail(orderId, payload, orders, totalOrderPreis, dateOfOrder);
 
   return {
     orderId: orderId,
@@ -185,7 +185,7 @@ function validateOrderPayload(payload) {
     throw new Error("At least one menu must be ordered.");
   }
 
-  if (!/^\d{2}\.\d{2}\.\d{4}$/.test(String(payload.dateOfMenu || ""))) {
+  if (!/^\d{2}\.\d{2}\.\d{4}$/.test(String(payload.dateOfMenü || ""))) {
     throw new Error("Invalid menu date.");
   }
 
@@ -211,26 +211,26 @@ function validateOrderPayload(payload) {
       throw new Error("Invalid menu.");
     }
     if (!Number.isInteger(amount) || amount < 1 || amount > 10) {
-      throw new Error("Menu amount must be between 1 and 10.");
+      throw new Error("Menü amount must be between 1 and 10.");
     }
   });
 }
 
 function sendAdminEmail(orderId, payload, orders, total, dateOfOrder) {
   const lines = [
-    `Order ID: ${orderId}`,
+    `Bestellnummer: ${orderId}`,
     `Date of order: ${dateOfOrder}`,
-    `Date of menu: ${payload.dateOfMenu}`,
+    `Date of menu: ${payload.dateOfMenü}`,
     "",
     "Customer:",
-    `Surname: ${payload.surname}`,
-    `Street: ${payload.street}`,
-    `House Number: ${payload.houseNumber}`,
+    `Nachname: ${payload.surname}`,
+    `Straße: ${payload.street}`,
+    `Hausnummer: ${payload.houseNumber}`,
     `Zipcode: ${payload.zipcode}`,
     `Email: ${payload.email}`,
-    `Description: ${payload.description || "-"}`,
+    `Bemerkung: ${payload.description || "-"}`,
     "",
-    "Menus:"
+    "Menüs:"
   ];
 
   orders.forEach(item => {
@@ -239,11 +239,11 @@ function sendAdminEmail(orderId, payload, orders, total, dateOfOrder) {
     );
   });
 
-  lines.push("", `Total: ${total.toFixed(2)} €`);
+  lines.push("", `Gesamtsumme: ${total.toFixed(2)} €`);
 
   MailApp.sendEmail(
     CONFIG.ADMIN_EMAIL,
-    `tawa order ${orderId} – ${payload.dateOfMenu}`,
+    `tawa order ${orderId} – ${payload.dateOfMenü}`,
     lines.join("\n")
   );
 }
@@ -252,9 +252,9 @@ function sendCustomerEmail(orderId, payload, orders, total, dateOfOrder) {
   const lines = [
     "Thank you for your tawa order.",
     "",
-    `Order ID: ${orderId}`,
+    `Bestellnummer: ${orderId}`,
     `Date of order: ${dateOfOrder}`,
-    `Date of menu: ${payload.dateOfMenu}`,
+    `Date of menu: ${payload.dateOfMenü}`,
     "",
     "Ordered menus:"
   ];
@@ -267,9 +267,9 @@ function sendCustomerEmail(orderId, payload, orders, total, dateOfOrder) {
 
   lines.push(
     "",
-    `Total: ${total.toFixed(2)} €`,
+    `Gesamtsumme: ${total.toFixed(2)} €`,
     "",
-    "If you need to change or cancel the order, please reply to this email and include your Order ID."
+    "If you need to change or cancel the order, please reply to this email and include your Bestellnummer."
   );
 
   MailApp.sendEmail(
