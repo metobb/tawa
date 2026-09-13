@@ -37,7 +37,7 @@ function doGet(e) {
 
       return jsonResponse({
         ok: true,
-        menus: getMenüsForDate(date)
+        menus: getMenusForDate(date)
       });
     }
 
@@ -78,7 +78,7 @@ function doPost(e) {
   }
 }
 
-function getMenüsForDate(dateString) {
+function getMenusForDate(dateString) {
   const sheet = SpreadsheetApp
     .openById(CONFIG.MENU_SPREADSHEET_ID)
     .getSheetByName(CONFIG.MENU_SHEET_NAME);
@@ -90,12 +90,12 @@ function getMenüsForDate(dateString) {
 
   const headers = values[0].map(String);
   const dateCol = headers.indexOf("Date");
-  const menuCol = headers.indexOf("Menü");
+  const menuCol = headers.indexOf("Menu");
   const mealCol = headers.indexOf("Meal");
   const pictureCol = headers.indexOf("Meal Picture");
 
   if ([dateCol, menuCol, mealCol, pictureCol].some(index => index === -1)) {
-    throw new Error("tawa_menu must contain: Date, Menü, Meal, Meal Picture.");
+    throw new Error("tawa_menu must contain: Date, Menu, Meal, Meal Picture.");
   }
 
   const grouped = {};
@@ -152,7 +152,7 @@ function saveOrder(payload) {
     item.menu,
     Number(item.amount),
     dateOfOrder,
-    payload.dateOfMenü,
+    payload.dateOfMenu,
     Number(item.amount) * CONFIG.PRICE_PER_MENU,
     payload.surname,
     payload.street,
@@ -185,7 +185,7 @@ function validateOrderPayload(payload) {
     throw new Error("At least one menu must be ordered.");
   }
 
-  if (!/^\d{2}\.\d{2}\.\d{4}$/.test(String(payload.dateOfMenü || ""))) {
+  if (!/^\d{2}\.\d{2}\.\d{4}$/.test(String(payload.dateOfMenu || ""))) {
     throw new Error("Invalid menu date.");
   }
 
@@ -220,7 +220,7 @@ function sendAdminEmail(orderId, payload, orders, total, dateOfOrder) {
   const lines = [
     `Bestellnummer: ${orderId}`,
     `Date of order: ${dateOfOrder}`,
-    `Date of menu: ${payload.dateOfMenü}`,
+    `Date of menu: ${payload.dateOfMenu}`,
     "",
     "Customer:",
     `Nachname: ${payload.surname}`,
@@ -243,7 +243,7 @@ function sendAdminEmail(orderId, payload, orders, total, dateOfOrder) {
 
   MailApp.sendEmail(
     CONFIG.ADMIN_EMAIL,
-    `tawa order ${orderId} – ${payload.dateOfMenü}`,
+    `tawa order ${orderId} – ${payload.dateOfMenu}`,
     lines.join("\n")
   );
 }
@@ -254,7 +254,7 @@ function sendCustomerEmail(orderId, payload, orders, total, dateOfOrder) {
     "",
     `Bestellnummer: ${orderId}`,
     `Date of order: ${dateOfOrder}`,
-    `Date of menu: ${payload.dateOfMenü}`,
+    `Date of menu: ${payload.dateOfMenu}`,
     "",
     "Ordered menus:"
   ];
