@@ -218,9 +218,9 @@ function validateOrderPayload(payload) {
 
 function sendAdminEmail(orderId, payload, orders, total, dateOfOrder) {
   const lines = [
-    `Order ID: ${orderId}`,
-    `Date of order: ${dateOfOrder}`,
-    `Date of menu: ${payload.dateOfMenu}`,
+    `Bestellnummer: ${orderId}`,
+    `Bestellungsdatum: ${dateOfOrder}`,
+    `Datum von Menüs: ${payload.dateOfMenu}`,
     "",
     "Customer:",
     `Surname: ${payload.surname}`,
@@ -274,7 +274,7 @@ function sendCustomerEmail(orderId, payload, orders, total, dateOfOrder) {
 
   MailApp.sendEmail(
     payload.email,
-    `tawa order confirmation ${orderId}`,
+    `Bestellbestätigung von tawa ${orderId}`,
     lines.join("\n"),
     {
       replyTo: CONFIG.ADMIN_EMAIL,
