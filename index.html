@@ -21,7 +21,7 @@
     </section>
 
     <section id="orderPage" class="page hidden">
-      <button id="homeTopButton" class="home-button" type="button">Startseite</button>
+      <button id="homeTopButton" class="home-button" type="button">Home Page</button>
 
       <div class="order-header">
         <h1 id="selectedDateTitle"></h1>
@@ -32,61 +32,61 @@
 
       <form id="orderForm" class="customer-form" novalidate>
         <button id="deliveryToggle" class="delivery-toggle" type="button" aria-expanded="false" aria-controls="deliveryFields">
-          <span>Lieferdetails</span>
+          <span>Delivery Details</span>
           <span class="delivery-chevron" aria-hidden="true">▼</span>
         </button>
 
         <div id="deliveryFields" class="delivery-fields" hidden>
           <label>
-            Nachname *
+            Surname *
             <input id="surname" name="surname" type="text" autocomplete="family-name" required>
           </label>
 
           <label>
-            Straße *
+            Street *
             <select id="street" name="street" required>
               <option value="Vereinsstraße">Vereinsstraße</option>
             </select>
           </label>
 
           <label>
-            Hausnummer *
+            House Number *
             <input id="houseNumber" name="houseNumber" type="text" autocomplete="address-line2" required>
           </label>
 
           <label>
-            PLZ *
+            ZIP Code *
             <input id="zipcode" name="zipcode" type="text" value="20357" inputmode="numeric" autocomplete="postal-code" readonly required>
           </label>
 
           <label>
-            E-Mail *
+            Email *
             <input id="email" name="email" type="email" autocomplete="email" required>
           </label>
 
           <label>
-            Bemerkung
+            Description
             <textarea id="description" name="description" rows="4" placeholder="Optional"></textarea>
           </label>
         </div>
 
         <div class="order-summary">
           <span>Total</span>
-          <strong id="totalPreis">0.00 €</strong>
+          <strong id="totalPrice">0.00 €</strong>
         </div>
 
-        <button id="orderButton" class="order-button" type="submit">Bestellen</button>
+        <button id="orderButton" class="order-button" type="submit">Order</button>
       </form>
 
-      <button id="homeBottomButton" class="home-button" type="button">Startseite</button>
+      <button id="homeBottomButton" class="home-button" type="button">Home Page</button>
     </section>
   </main>
 
   <div id="confirmationModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle">
     <div class="modal-card">
-      <h2 id="confirmationTitle">Bestellen confirmed</h2>
+      <h2 id="confirmationTitle">Order confirmed</h2>
       <p>Your order has been received. The delivery takes place daily between 18:30 and 19:00. You will receive a confirmation email. By replying to that email you can change or cancel the order.</p>
-      <button id="confirmationHomeButton" class="home-button" type="button">Startseite</button>
+      <button id="confirmationHomeButton" class="home-button" type="button">Home Page</button>
     </div>
   </div>
 

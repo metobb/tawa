@@ -137,7 +137,7 @@ function saveOrder(payload) {
   );
 
   const orderId = Utilities.getUuid();
-  const totalOrderPreis = orders.reduce(
+  const totalOrderPrice = orders.reduce(
     (sum, item) => sum + Number(item.amount) * CONFIG.PRICE_PER_MENU,
     0
   );
@@ -171,8 +171,8 @@ function saveOrder(payload) {
     ).setValues(rows);
   }
 
-  sendAdminEmail(orderId, payload, orders, totalOrderPreis, dateOfOrder);
-  sendCustomerEmail(orderId, payload, orders, totalOrderPreis, dateOfOrder);
+  sendAdminEmail(orderId, payload, orders, totalOrderPrice, dateOfOrder);
+  sendCustomerEmail(orderId, payload, orders, totalOrderPrice, dateOfOrder);
 
   return {
     orderId: orderId,
@@ -211,26 +211,26 @@ function validateOrderPayload(payload) {
       throw new Error("Invalid menu.");
     }
     if (!Number.isInteger(amount) || amount < 1 || amount > 10) {
-      throw new Error("Menü amount must be between 1 and 10.");
+      throw new Error("Menu amount must be between 1 and 10.");
     }
   });
 }
 
 function sendAdminEmail(orderId, payload, orders, total, dateOfOrder) {
   const lines = [
-    `Bestellnummer: ${orderId}`,
+    `Order ID: ${orderId}`,
     `Date of order: ${dateOfOrder}`,
     `Date of menu: ${payload.dateOfMenu}`,
     "",
     "Customer:",
-    `Nachname: ${payload.surname}`,
-    `Straße: ${payload.street}`,
-    `Hausnummer: ${payload.houseNumber}`,
+    `Surname: ${payload.surname}`,
+    `Street: ${payload.street}`,
+    `House Number: ${payload.houseNumber}`,
     `Zipcode: ${payload.zipcode}`,
     `Email: ${payload.email}`,
-    `Bemerkung: ${payload.description || "-"}`,
+    `Description: ${payload.description || "-"}`,
     "",
-    "Menüs:"
+    "Menus:"
   ];
 
   orders.forEach(item => {
@@ -239,7 +239,7 @@ function sendAdminEmail(orderId, payload, orders, total, dateOfOrder) {
     );
   });
 
-  lines.push("", `Gesamtsumme: ${total.toFixed(2)} €`);
+  lines.push("", `Total: ${total.toFixed(2)} €`);
 
   MailApp.sendEmail(
     CONFIG.ADMIN_EMAIL,
@@ -252,7 +252,7 @@ function sendCustomerEmail(orderId, payload, orders, total, dateOfOrder) {
   const lines = [
     "Thank you for your tawa order.",
     "",
-    `Bestellnummer: ${orderId}`,
+    `Order ID: ${orderId}`,
     `Date of order: ${dateOfOrder}`,
     `Date of menu: ${payload.dateOfMenu}`,
     "",
@@ -267,9 +267,9 @@ function sendCustomerEmail(orderId, payload, orders, total, dateOfOrder) {
 
   lines.push(
     "",
-    `Gesamtsumme: ${total.toFixed(2)} €`,
+    `Total: ${total.toFixed(2)} €`,
     "",
-    "If you need to change or cancel the order, please reply to this email and include your Bestellnummer."
+    "If you need to change or cancel the order, please reply to this email and include your Order ID."
   );
 
   MailApp.sendEmail(

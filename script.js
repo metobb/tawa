@@ -12,7 +12,7 @@ const menusContainer = document.getElementById("menusContainer");
 const selectedDateTitle = document.getElementById("selectedDateTitle");
 const menuLoading = document.getElementById("menuLoading");
 const orderForm = document.getElementById("orderForm");
-const totalPrice = document.getElementById("totalPreis");
+const totalPrice = document.getElementById("totalPrice");
 const orderButton = document.getElementById("orderButton");
 const deliveryToggle = document.getElementById("deliveryToggle");
 const deliveryFields = document.getElementById("deliveryFields");
@@ -106,7 +106,7 @@ async function openOrderPage(dateString) {
     if (!response.ok) throw new Error(`Menu request failed (${response.status})`);
 
     const data = await response.json();
-    if (!data.ok) throw new Error(data.error || "Die Menüs konnten nicht geladen werden.");
+    if (!data.ok) throw new Error(data.error || "Could not load menus.");
 
     currentMenus = data.menus || [];
 
@@ -227,7 +227,7 @@ async function submitOrder(event) {
 
   const selectedOrders = getSelectedOrders();
   if (selectedOrders.length === 0) {
-    showError("Bitte wählen Sie mindestens ein Menü aus.");
+    showError("Please select at least one menu.");
     return;
   }
 
@@ -311,29 +311,4 @@ function goHome() {
 function showError(message) {
   errorMessage.textContent = message;
   errorModal.classList.remove("hidden");
-}
-
-
-// Sichtbare Ladeanzeige
-function showLoading(message = "Wird geladen …") {
-  let bar = document.getElementById("tawa-loading-bar");
-  if (!bar) {
-    bar = document.createElement("div");
-    bar.id = "tawa-loading-bar";
-    bar.innerHTML = `
-      <div class="tawa-loading-inner">
-        <span class="tawa-spinner" aria-hidden="true"></span>
-        <span class="tawa-loading-message"></span>
-      </div>
-      <div class="tawa-loading-progress"></div>`;
-    document.body.appendChild(bar);
-  }
-  bar.querySelector(".tawa-loading-message").textContent = message;
-  bar.classList.add("is-visible");
-  bar.setAttribute("aria-live", "polite");
-}
-
-function hideLoading() {
-  const bar = document.getElementById("tawa-loading-bar");
-  if (bar) bar.classList.remove("is-visible");
 }
