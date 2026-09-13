@@ -92,7 +92,7 @@ function renderCalendar() {
 
 async function openOrderPage(dateString) {
   selectedMenuDate = dateString;
-  selectedDateTitle.textContent = `Menü für ${dateString}`;
+  selectedDateTitle.textContent = `Menüs für ${dateString}`;
   homePage.classList.add("hidden");
   orderPage.classList.remove("hidden");
   menusContainer.innerHTML = "";
