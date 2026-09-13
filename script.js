@@ -248,7 +248,7 @@ async function submitOrder(event) {
   };
 
   orderButton.disabled = true;
-  orderButton.textContent = "Sending…";
+  orderButton.textContent = "Wird gesendet…";
 
   try {
     const response = await fetch(API_URL, {
@@ -273,7 +273,7 @@ async function submitOrder(event) {
     showError("Die Bestellung konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.");
   } finally {
     orderButton.disabled = false;
-    orderButton.textContent = "Order";
+    orderButton.textContent = "Bestellen";
   }
 }
 
