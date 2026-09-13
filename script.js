@@ -48,7 +48,7 @@ function renderCalendar() {
   const year = today.getFullYear();
   const month = today.getMonth();
 
-  const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
   weekdays.forEach(day => {
     const el = document.createElement("div");
     el.className = "calendar-weekday";
@@ -92,11 +92,11 @@ function renderCalendar() {
 
 async function openOrderPage(dateString) {
   selectedMenuDate = dateString;
-  selectedDateTitle.textContent = `Menu for ${dateString}`;
+  selectedDateTitle.textContent = `Menü für ${dateString}`;
   homePage.classList.add("hidden");
   orderPage.classList.remove("hidden");
   menusContainer.innerHTML = "";
-  menuLoading.textContent = "Loading menus…";
+  menuLoading.textContent = "Menüs werden geladen…";
   currentMenus = [];
   updateTotal();
 
@@ -106,14 +106,14 @@ async function openOrderPage(dateString) {
     if (!response.ok) throw new Error(`Menu request failed (${response.status})`);
 
     const data = await response.json();
-    if (!data.ok) throw new Error(data.error || "Could not load menus.");
+    if (!data.ok) throw new Error(data.error || "Menüs wurden nicht geladen.");
 
     currentMenus = data.menus || [];
 
     if (currentMenus.length !== 2) {
       menuLoading.textContent = currentMenus.length
         ? `Expected 2 menus, but ${currentMenus.length} menu(s) were found.`
-        : "No menus are available for this date.";
+        : "Für dieses Datum sind keine Menüs verfügbar.";
     } else {
       menuLoading.textContent = "";
     }
@@ -122,7 +122,7 @@ async function openOrderPage(dateString) {
   } catch (error) {
     console.error(error);
     menuLoading.textContent = "";
-    showError("The menus could not be loaded. Please try again.");
+    showError("Die Menüs konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
   }
 }
 
@@ -227,7 +227,7 @@ async function submitOrder(event) {
 
   const selectedOrders = getSelectedOrders();
   if (selectedOrders.length === 0) {
-    showError("Please select at least one menu.");
+    showError("Bitte wählen Sie mindestens ein Menü aus.");
     return;
   }
 
@@ -265,12 +265,12 @@ async function submitOrder(event) {
     if (!response.ok) throw new Error(`Order request failed (${response.status})`);
 
     const data = await response.json();
-    if (!data.ok) throw new Error(data.error || "The order could not be saved.");
+    if (!data.ok) throw new Error(data.error || "Die Bestellung konnte nicht gespeichert werden.");
 
     confirmationModal.classList.remove("hidden");
   } catch (error) {
     console.error(error);
-    showError("The order could not be completed. Please try again.");
+    showError("Die Bestellung konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.");
   } finally {
     orderButton.disabled = false;
     orderButton.textContent = "Order";
