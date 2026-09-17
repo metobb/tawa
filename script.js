@@ -382,3 +382,44 @@ function showError(message) {
   errorMessage.textContent = message;
   errorModal.classList.remove("hidden");
 }
+
+
+// Startseite -> Kalenderseite: Abendessen
+document.addEventListener("DOMContentLoaded", function () {
+  const abendessenButton = document.getElementById("abendessenButton");
+  if (!abendessenButton) return;
+
+  abendessenButton.addEventListener("click", function (event) {
+    event.preventDefault();
+
+    // Prefer the existing page-navigation function if the current app provides one.
+    if (typeof showCalendarPage === "function") {
+      showCalendarPage();
+      return;
+    }
+    if (typeof openCalendarPage === "function") {
+      openCalendarPage();
+      return;
+    }
+    if (typeof goToCalendarPage === "function") {
+      goToCalendarPage();
+      return;
+    }
+
+    const startPage =
+      document.getElementById("startPage") ||
+      document.querySelector(".start-page, #homePage, .home-page");
+
+    const calendarPage =
+      document.getElementById("calendarPage") ||
+      document.querySelector(".calendar-page");
+
+    if (startPage && calendarPage) {
+      startPage.classList.add("hidden");
+      startPage.setAttribute("aria-hidden", "true");
+      calendarPage.classList.remove("hidden");
+      calendarPage.removeAttribute("aria-hidden");
+      calendarPage.scrollIntoView({ behavior: "auto", block: "start" });
+    }
+  });
+});
