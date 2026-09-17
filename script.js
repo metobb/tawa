@@ -423,3 +423,66 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+
+
+/* =========================================================
+   Page navigation
+   Internal page names stay English; only labels are German.
+   startPage -> calendarPage -> menuPage
+   ========================================================= */
+
+function showPage(pageId) {
+  const pages = ["startPage", "calendarPage", "menuPage"];
+
+  pages.forEach(function (id) {
+    const page = document.getElementById(id);
+    if (!page) return;
+
+    const active = id === pageId;
+    page.classList.toggle("hidden", !active);
+    page.setAttribute("aria-hidden", String(!active));
+  });
+
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+function showStartPage() {
+  showPage("startPage");
+}
+
+function showCalendarPage() {
+  showPage("calendarPage");
+}
+
+function showMenuPage() {
+  showPage("menuPage");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const dinnerButton = document.getElementById("abendessenButton");
+
+  if (dinnerButton) {
+    dinnerButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      showCalendarPage();
+    });
+  }
+
+  // Any existing navigation controls are connected using their English IDs.
+  document.querySelectorAll('[data-page="startPage"]').forEach(function (button) {
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      showStartPage();
+    });
+  });
+
+  document.querySelectorAll('[data-page="calendarPage"]').forEach(function (button) {
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      showCalendarPage();
+    });
+  });
+
+  // Initial page: new landing page.
+  showStartPage();
+});

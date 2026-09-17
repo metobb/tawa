@@ -463,3 +463,11 @@ h1, h2 { margin-top: 0; }
     padding-right: 16px;
   }
 }
+
+
+/* Page containers used by the English internal page IDs. */
+#startPage.hidden,
+#calendarPage.hidden,
+#menuPage.hidden {
+  display: none !important;
+}
