@@ -471,3 +471,20 @@ h1, h2 { margin-top: 0; }
 #menuPage.hidden {
   display: none !important;
 }
+
+
+/* Reliable page visibility */
+#startPage[hidden],
+#calendarPage[hidden],
+#menuPage[hidden] {
+  display: none !important;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Delivery Details accordion */
+.delivery-fields[hidden] {
+  display: none !important;
+}

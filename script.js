@@ -384,7 +384,7 @@ function showError(message) {
 }
 
 
-// Startseite -> Kalenderseite: Abendessen
+
 document.addEventListener("DOMContentLoaded", function () {
   const abendessenButton = document.getElementById("abendessenButton");
   if (!abendessenButton) return;
@@ -427,23 +427,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
 /* =========================================================
    Page navigation
-   Internal page names stay English; only labels are German.
+   Technical page IDs are English:
    startPage -> calendarPage -> menuPage
    ========================================================= */
 
 function showPage(pageId) {
-  const pages = ["startPage", "calendarPage", "menuPage"];
-
-  pages.forEach(function (id) {
+  ["startPage", "calendarPage", "menuPage"].forEach(function (id) {
     const page = document.getElementById(id);
     if (!page) return;
-
     const active = id === pageId;
+    page.hidden = !active;
     page.classList.toggle("hidden", !active);
-    page.setAttribute("aria-hidden", String(!active));
+    page.setAttribute("aria-hidden", active ? "false" : "true");
   });
-
-  window.scrollTo({ top: 0, behavior: "auto" });
+  window.scrollTo(0, 0);
 }
 
 function showStartPage() {
@@ -452,6 +449,10 @@ function showStartPage() {
 
 function showCalendarPage() {
   showPage("calendarPage");
+  // Calendar rendering is independent of page visibility.
+  if (typeof renderCalendar === "function") {
+    renderCalendar();
+  }
 }
 
 function showMenuPage() {
@@ -460,7 +461,6 @@ function showMenuPage() {
 
 document.addEventListener("DOMContentLoaded", function () {
   const dinnerButton = document.getElementById("abendessenButton");
-
   if (dinnerButton) {
     dinnerButton.addEventListener("click", function (event) {
       event.preventDefault();
@@ -468,21 +468,22 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Any existing navigation controls are connected using their English IDs.
-  document.querySelectorAll('[data-page="startPage"]').forEach(function (button) {
+  // Explicitly connect all Startseite buttons to the new start page.
+  document.querySelectorAll('[data-page="startPage"], #calendarHomeButton, #menuHomeButton, #menuBottomHomeButton').forEach(function (button) {
     button.addEventListener("click", function (event) {
       event.preventDefault();
       showStartPage();
     });
   });
 
-  document.querySelectorAll('[data-page="calendarPage"]').forEach(function (button) {
+  // Explicitly connect all Zurück buttons to the calendar page.
+  document.querySelectorAll('[data-page="calendarPage"], #calendarBackButton, #menuBackButton, #menuBottomBackButton').forEach(function (button) {
     button.addEventListener("click", function (event) {
       event.preventDefault();
       showCalendarPage();
     });
   });
 
-  // Initial page: new landing page.
+  // New landing page is the initial page.
   showStartPage();
 });
