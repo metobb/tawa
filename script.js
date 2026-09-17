@@ -5,12 +5,14 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbwrBxksOzfmPIj8KADTw4i-8RowJEC5o9sWjEmvPgUnD7Oj-DylIhV8ZwfhXAW4UmC4/exec";
 const PRICE_PER_MENU = 8;
 
-const homePage = document.getElementById("homePage");
+const startPage = document.getElementById("startPage");
+const calendarPage = document.getElementById("calendarPage");
 const orderPage = document.getElementById("orderPage");
 const calendar = document.getElementById("calendar");
 const menusContainer = document.getElementById("menusContainer");
 const selectedDateTitle = document.getElementById("selectedDateTitle");
 const menuLoading = document.getElementById("menuLoading");
+const orderContent = document.getElementById("orderContent");
 const orderForm = document.getElementById("orderForm");
 const totalPrice = document.getElementById("totalPrice");
 const orderButton = document.getElementById("orderButton");
@@ -23,30 +25,77 @@ const errorMessage = document.getElementById("errorMessage");
 let selectedMenuDate = "";
 let currentMenus = [];
 
+// The ordering window is based on the current week:
+// today and all previous days are inactive; the next two weekdays are active;
+// weekends and all other dates are inactive.
+function startOfWeekMonday(date) {
+  const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = result.getDay();
+  const mondayOffset = (day + 6) % 7;
+  result.setDate(result.getDate() - mondayOffset);
+  return result;
+}
+
+function dateOnly(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function daysBetween(a, b) {
+  return Math.round((dateOnly(b) - dateOnly(a)) / 86400000);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  renderCalendar();
-  bindHomeButtons();
+  document.getElementById("dinnerButton").addEventListener("click", showCalendarPage);
+  document.getElementById("calendarHomeButton").addEventListener("click", showStartPage);
+
+  bindNavigationButtons();
   orderForm.addEventListener("submit", submitOrder);
   deliveryToggle.addEventListener("click", toggleDeliveryDetails);
-});
 
-function localDateKey(date = new Date()) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
+  // Calendar is rendered when the calendar page is opened, and also once here
+  // so it is ready immediately after navigating to it.
+  renderCalendar();
+});
 
 function displayDate(date) {
   return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
 }
 
+function showStartPage() {
+  confirmationModal.classList.add("hidden");
+  errorModal.classList.add("hidden");
+  startPage.classList.remove("hidden");
+  calendarPage.classList.add("hidden");
+  orderPage.classList.add("hidden");
+  resetOrderPage();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showCalendarPage() {
+  confirmationModal.classList.add("hidden");
+  errorModal.classList.add("hidden");
+  startPage.classList.add("hidden");
+  orderPage.classList.add("hidden");
+  calendarPage.classList.remove("hidden");
+  renderCalendar();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showOrderPage(dateString) {
+  startPage.classList.add("hidden");
+  calendarPage.classList.add("hidden");
+  orderPage.classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  openOrderPage(dateString);
+}
+
 function renderCalendar() {
   calendar.innerHTML = "";
 
-  const today = new Date();
+  const today = dateOnly(new Date());
   const year = today.getFullYear();
   const month = today.getMonth();
+  const weekStart = startOfWeekMonday(today);
 
   const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
   weekdays.forEach(day => {
@@ -66,26 +115,35 @@ function renderCalendar() {
     calendar.appendChild(empty);
   }
 
+  // Only the two weekdays immediately after today are active.
+  // The remaining days of the current week are red (past/today), while all
+  // other dates are gray/inactive. Weekends are always gray/inactive.
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
-    const offset = Math.round((date - new Date(year, month, today.getDate())) / 86400000);
+    const offsetFromToday = daysBetween(today, date);
+    const dayOfWeek = date.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const inCurrentWeek = daysBetween(weekStart, date) >= 0 && daysBetween(weekStart, date) <= 6;
 
     const button = document.createElement("button");
     button.type = "button";
     button.className = "calendar-day";
     button.textContent = day;
+    button.disabled = true;
 
-    if (offset === 0) {
-      button.classList.add("today");
-      button.disabled = true;
-    } else if (offset === 1 || offset === 2) {
+    if (inCurrentWeek && !isWeekend && offsetFromToday <= 0) {
+      button.classList.add("past");
+    } else if (inCurrentWeek && !isWeekend && (offsetFromToday === 1 || offsetFromToday === 2)) {
       button.classList.add("active");
       button.disabled = false;
-      button.addEventListener("click", () => openOrderPage(displayDate(date)));
+      button.addEventListener("click", () => showOrderPage(displayDate(date)));
+    } else if (offsetFromToday === 0) {
+      // Today is red, even if it is a weekend.
+      button.classList.add("today");
     } else {
-      button.disabled = true;
+      button.classList.add("inactive");
     }
-
+  
     calendar.appendChild(button);
   }
 }
@@ -93,12 +151,14 @@ function renderCalendar() {
 async function openOrderPage(dateString) {
   selectedMenuDate = dateString;
   selectedDateTitle.textContent = `Menüs für ${dateString}`;
-  homePage.classList.add("hidden");
-  orderPage.classList.remove("hidden");
   menusContainer.innerHTML = "";
-  menuLoading.textContent = "Menüs werden geladen…";
   currentMenus = [];
   updateTotal();
+  resetDeliveryDetails();
+
+  // During loading, only the loading bar and selected date are visible.
+  orderContent.classList.add("hidden");
+  menuLoading.classList.remove("hidden");
 
   try {
     const url = `${API_URL}?action=menus&date=${encodeURIComponent(dateString)}`;
@@ -111,17 +171,19 @@ async function openOrderPage(dateString) {
     currentMenus = data.menus || [];
 
     if (currentMenus.length !== 2) {
-      menuLoading.textContent = currentMenus.length
-        ? `Expected 2 menus, but ${currentMenus.length} menu(s) were found.`
-        : "Für dieses Datum sind keine Menüs verfügbar.";
-    } else {
-      menuLoading.textContent = "";
+      if (currentMenus.length === 0) {
+        throw new Error("Für dieses Datum sind keine Menüs verfügbar.");
+      }
+      throw new Error(`Es wurden ${currentMenus.length} statt 2 Menüs für dieses Datum gefunden.`);
     }
 
     renderMenus();
+    menuLoading.classList.add("hidden");
+    orderContent.classList.remove("hidden");
   } catch (error) {
     console.error(error);
-    menuLoading.textContent = "";
+    menuLoading.classList.add("hidden");
+    orderContent.classList.add("hidden");
     showError("Die Menüs konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
   }
 }
@@ -174,7 +236,7 @@ function renderMenus() {
     const select = document.createElement("select");
     select.className = "menu-amount";
     select.dataset.menuIndex = String(index);
-    select.setAttribute("aria-label", `Amount for ${menu.menu}`);
+    select.setAttribute("aria-label", `Anzahl für ${menu.menu}`);
 
     const zero = document.createElement("option");
     zero.value = "0";
@@ -205,6 +267,12 @@ function toggleDeliveryDetails() {
   deliveryToggle.setAttribute("aria-expanded", String(!expanded));
   deliveryFields.hidden = expanded;
   deliveryToggle.classList.toggle("expanded", !expanded);
+}
+
+function resetDeliveryDetails() {
+  deliveryToggle.setAttribute("aria-expanded", "false");
+  deliveryFields.hidden = true;
+  deliveryToggle.classList.remove("expanded");
 }
 
 function getSelectedOrders() {
@@ -277,13 +345,20 @@ async function submitOrder(event) {
   }
 }
 
-function bindHomeButtons() {
+function bindNavigationButtons() {
   [
     document.getElementById("homeTopButton"),
     document.getElementById("homeBottomButton"),
     document.getElementById("confirmationHomeButton")
   ].forEach(button => {
-    button.addEventListener("click", goHome);
+    button.addEventListener("click", showStartPage);
+  });
+
+  [
+    document.getElementById("backTopButton"),
+    document.getElementById("backBottomButton")
+  ].forEach(button => {
+    button.addEventListener("click", showCalendarPage);
   });
 
   document.getElementById("errorCloseButton").addEventListener("click", () => {
@@ -291,21 +366,16 @@ function bindHomeButtons() {
   });
 }
 
-function goHome() {
-  confirmationModal.classList.add("hidden");
-  orderPage.classList.add("hidden");
-  homePage.classList.remove("hidden");
+function resetOrderPage() {
   orderForm.reset();
   document.getElementById("zipcode").value = "20357";
-  deliveryToggle.setAttribute("aria-expanded", "false");
-  deliveryFields.hidden = true;
-  deliveryToggle.classList.remove("expanded");
+  resetDeliveryDetails();
   menusContainer.innerHTML = "";
+  orderContent.classList.add("hidden");
+  menuLoading.classList.add("hidden");
   currentMenus = [];
   selectedMenuDate = "";
   updateTotal();
-  renderCalendar();
-  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function showError(message) {
