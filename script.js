@@ -7,11 +7,11 @@ const PRICE_PER_MENU = 8;
 
 const startPage = document.getElementById("startPage");
 const calendarPage = document.getElementById("calendarPage");
-const orderPage = document.getElementById("menuPage");
+const menuPage = document.getElementById("menuPage");
 const calendar = document.getElementById("calendar");
 const menusContainer = document.getElementById("menusContainer");
 const selectedDateTitle = document.getElementById("selectedDateTitle");
-const menuLoading = document.getElementById("menuLoading");
+const menuLoadingBar = document.getElementById("menuLoadingBar");
 const orderContent = document.getElementById("orderContent");
 const orderForm = document.getElementById("orderForm");
 const totalPrice = document.getElementById("totalPrice");
@@ -25,61 +25,97 @@ const errorMessage = document.getElementById("errorMessage");
 let selectedMenuDate = "";
 let currentMenus = [];
 
-// Calendar availability is calculated directly when each date cell is created.
-function startOfWeekMonday(date) {
-  const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const day = result.getDay();
-  const mondayOffset = (day + 6) % 7;
-  result.setDate(result.getDate() - mondayOffset);
-  return result;
-}
-
 function dateOnly(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
-
-function daysBetween(a, b) {
-  return Math.round((dateOnly(b) - dateOnly(a)) / 86400000);
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("dinnerButton").addEventListener("click", showCalendarPage);
-  document.getElementById("calendarHomeButton").addEventListener("click", showStartPage);
-
-  bindNavigationButtons();
-  orderForm.addEventListener("submit", submitOrder);
-  deliveryToggle.addEventListener("click", toggleDeliveryDetails);
-
-  // Calendar is rendered when the calendar page is opened, and also once here
-  // so it is ready immediately after navigating to it.
-  renderCalendar();
-});
 
 function displayDate(date) {
   return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
 }
 
+function mondayOfWeek(date) {
+  const d = dateOnly(date);
+  const day = d.getDay(); // Sun=0 ... Sat=6
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  return d;
+}
+
+function getCalendarState(date, today) {
+  const d = dateOnly(date);
+  const t = dateOnly(today);
+  const dayOfWeek = d.getDay();
+
+  // Saturday and Sunday are always unavailable.
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    return "gray";
+  }
+
+  // On Friday, the complete following Monday-Friday is available.
+  if (t.getDay() === 5) {
+    const nextMonday = new Date(t);
+    nextMonday.setDate(t.getDate() + 3);
+
+    const nextFriday = new Date(nextMonday);
+    nextFriday.setDate(nextMonday.getDate() + 4);
+
+    if (d >= nextMonday && d <= nextFriday) {
+      return "green";
+    }
+  }
+
+  // During the current week, future weekdays are available.
+  // Today and previous weekdays are red/inactive.
+  const currentMonday = mondayOfWeek(t);
+  const dateMonday = mondayOfWeek(d);
+
+  if (dateMonday.getTime() === currentMonday.getTime()) {
+    return d > t ? "green" : "red";
+  }
+
+  return "gray";
+}
+
+function showPage(pageId) {
+  ["startPage", "calendarPage", "menuPage"].forEach(id => {
+    const page = document.getElementById(id);
+    if (!page) return;
+
+    const active = id === pageId;
+    page.hidden = !active;
+    page.classList.toggle("hidden", !active);
+    page.setAttribute("aria-hidden", active ? "false" : "true");
+  });
+
+  window.scrollTo(0, 0);
+}
+
 function showStartPage() {
   confirmationModal.classList.add("hidden");
   errorModal.classList.add("hidden");
-  startPage.classList.remove("hidden");
-  calendarPage.classList.add("hidden");
-  orderPage.classList.add("hidden");
   resetOrderPage();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  showPage("startPage");
 }
 
 function showCalendarPage() {
+  confirmationModal.classList.add("hidden");
+  errorModal.classList.add("hidden");
   showPage("calendarPage");
-  if (typeof renderCalendar === "function") renderCalendar();
+  renderCalendar();
 }
 
 function showOrderPage(dateString) {
-  startPage.classList.add("hidden");
-  calendarPage.classList.add("hidden");
-  orderPage.classList.remove("hidden");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-  openOrderPage(dateString);
+  confirmationModal.classList.add("hidden");
+  errorModal.classList.add("hidden");
+
+  selectedMenuDate = dateString;
+  selectedDateTitle.textContent = `Menüs für ${dateString}`;
+
+  // Show the menu page immediately. While the request is running,
+  // only navigation, selected date and the loading bar are visible.
+  showPage("menuPage");
+  prepareMenuLoadingState();
+
+  loadMenusForDate(dateString);
 }
 
 function renderCalendar() {
@@ -89,8 +125,7 @@ function renderCalendar() {
   const year = today.getFullYear();
   const month = today.getMonth();
 
-  const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-  weekdays.forEach(day => {
+  ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].forEach(day => {
     const el = document.createElement("div");
     el.className = "calendar-weekday";
     el.textContent = day;
@@ -107,8 +142,6 @@ function renderCalendar() {
     calendar.appendChild(empty);
   }
 
-  // The availability state is calculated here, when each date cell is created.
-  // This avoids relying on a later DOM post-processing step.
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
     const state = getCalendarState(date, today);
@@ -136,30 +169,35 @@ function renderCalendar() {
   }
 }
 
-async function openOrderPage(dateString) {
-  /* openOrderPage__v11 */
-  setMenuLoading(true);
-  collapseDeliveryDetails();
-  selectedMenuDate = dateString;
-  selectedDateTitle.textContent = `Menüs für ${dateString}`;
+function prepareMenuLoadingState() {
   menusContainer.innerHTML = "";
   currentMenus = [];
   updateTotal();
   resetDeliveryDetails();
 
-  // During loading, only the loading bar and selected date are visible.
   orderContent.classList.add("hidden");
-  menuLoading.classList.remove("hidden");
+  menuLoadingBar.hidden = false;
+}
 
+async function loadMenusForDate(dateString) {
   try {
     const url = `${API_URL}?action=menus&date=${encodeURIComponent(dateString)}`;
-    const response = await fetch(url, { method: "GET" });
-    if (!response.ok) throw new Error(`Menu request failed (${response.status})`);
+    const response = await fetch(url, {
+      method: "GET",
+      mode: "cors",
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(`Menu request failed (${response.status})`);
+    }
 
     const data = await response.json();
-    if (!data.ok) throw new Error(data.error || "Menüs wurden nicht geladen.");
+    if (!data.ok) {
+      throw new Error(data.error || "Menüs wurden nicht geladen.");
+    }
 
-    currentMenus = data.menus || [];
+    currentMenus = Array.isArray(data.menus) ? data.menus : [];
 
     if (currentMenus.length !== 2) {
       if (currentMenus.length === 0) {
@@ -169,19 +207,17 @@ async function openOrderPage(dateString) {
     }
 
     renderMenus();
-    setMenuLoading(false);
-    collapseDeliveryDetails();
-    initDeliveryToggle();
-    menuLoading.classList.add("hidden");
+    resetDeliveryDetails();
+
+    // Only after the menu data has arrived do the menu/order sections become visible.
+    menuLoadingBar.hidden = true;
     orderContent.classList.remove("hidden");
   } catch (error) {
-    console.error(error);
-    menuLoading.classList.add("hidden");
+    console.error("Menu loading failed:", error);
+    menuLoadingBar.hidden = true;
     orderContent.classList.add("hidden");
-    setMenuLoading(false);
     showError("Die Menüs konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
   }
-
 }
 
 function renderMenus() {
@@ -251,7 +287,6 @@ function renderMenus() {
     controls.appendChild(price);
     controls.appendChild(select);
     card.appendChild(controls);
-
     menusContainer.appendChild(card);
   });
 
@@ -260,9 +295,11 @@ function renderMenus() {
 
 function toggleDeliveryDetails() {
   const expanded = deliveryToggle.getAttribute("aria-expanded") === "true";
-  deliveryToggle.setAttribute("aria-expanded", String(!expanded));
-  deliveryFields.hidden = expanded;
-  deliveryToggle.classList.toggle("expanded", !expanded);
+  const nextExpanded = !expanded;
+
+  deliveryToggle.setAttribute("aria-expanded", String(nextExpanded));
+  deliveryFields.hidden = !nextExpanded;
+  deliveryToggle.classList.toggle("expanded", nextExpanded);
 }
 
 function resetDeliveryDetails() {
@@ -347,14 +384,14 @@ function bindNavigationButtons() {
     document.getElementById("homeBottomButton"),
     document.getElementById("confirmationHomeButton")
   ].forEach(button => {
-    button.addEventListener("click", showStartPage);
+    if (button) button.addEventListener("click", showStartPage);
   });
 
   [
     document.getElementById("backTopButton"),
     document.getElementById("backBottomButton")
   ].forEach(button => {
-    button.addEventListener("click", showCalendarPage);
+    if (button) button.addEventListener("click", showCalendarPage);
   });
 
   document.getElementById("errorCloseButton").addEventListener("click", () => {
@@ -367,10 +404,10 @@ function resetOrderPage() {
   document.getElementById("zipcode").value = "20357";
   resetDeliveryDetails();
   menusContainer.innerHTML = "";
-  orderContent.classList.add("hidden");
-  menuLoading.classList.add("hidden");
   currentMenus = [];
   selectedMenuDate = "";
+  menuLoadingBar.hidden = true;
+  orderContent.classList.add("hidden");
   updateTotal();
 }
 
@@ -379,194 +416,17 @@ function showError(message) {
   errorModal.classList.remove("hidden");
 }
 
-
-
-document.addEventListener("DOMContentLoaded", function () {
-  const abendessenButton = document.getElementById("dinnerButton");
-  if (!abendessenButton) return;
-
-  abendessenButton.addEventListener("click", function (event) {
-    event.preventDefault();
-
-    // Prefer the existing page-navigation function if the current app provides one.
-    if (typeof showCalendarPage === "function") {
-      showCalendarPage();
-      return;
-    }
-    if (typeof openCalendarPage === "function") {
-      openCalendarPage();
-      return;
-    }
-    if (typeof goToCalendarPage === "function") {
-      goToCalendarPage();
-      return;
-    }
-
-    const startPage =
-      document.getElementById("startPage") ||
-      document.querySelector(".start-page, #homePage, .home-page");
-
-    const calendarPage =
-      document.getElementById("calendarPage") ||
-      document.querySelector(".calendar-page");
-
-    if (startPage && calendarPage) {
-      startPage.classList.add("hidden");
-      startPage.setAttribute("aria-hidden", "true");
-      calendarPage.classList.remove("hidden");
-      calendarPage.removeAttribute("aria-hidden");
-      calendarPage.scrollIntoView({ behavior: "auto", block: "start" });
-    }
-  });
-});
-
-
-/* =========================================================
-   Page navigation
-   Technical page IDs are English:
-   startPage -> calendarPage -> menuPage
-   ========================================================= */
-
-function showPage(pageId) {
-  ["startPage", "calendarPage", "menuPage"].forEach(function (id) {
-    const page = document.getElementById(id);
-    if (!page) return;
-    const active = id === pageId;
-    page.hidden = !active;
-    page.classList.toggle("hidden", !active);
-    page.setAttribute("aria-hidden", active ? "false" : "true");
-  });
-  window.scrollTo(0, 0);
-}
-
-function showStartPage() {
-  showPage("startPage");
-}
-
-function showCalendarPage() {
-  showPage("calendarPage");
-  // Render the calendar using the current availability rules.
-  if (typeof renderCalendar === "function") {
-    renderCalendar();
-  }
-}
-
-function showMenuPage() {
-  showPage("menuPage");
-}
-
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
   const dinnerButton = document.getElementById("dinnerButton");
-  if (dinnerButton) {
-    dinnerButton.addEventListener("click", function (event) {
-      event.preventDefault();
-      showCalendarPage();
-    });
-  }
+  const calendarHomeButton = document.getElementById("calendarHomeButton");
 
-  // Explicitly connect all Startseite buttons to the new start page.
-  document.querySelectorAll('[data-page="startPage"], #calendarHomeButton, #menuHomeButton, #menuBottomHomeButton').forEach(function (button) {
-    button.addEventListener("click", function (event) {
-      event.preventDefault();
-      showStartPage();
-    });
-  });
+  if (dinnerButton) dinnerButton.addEventListener("click", showCalendarPage);
+  if (calendarHomeButton) calendarHomeButton.addEventListener("click", showStartPage);
+  if (deliveryToggle) deliveryToggle.addEventListener("click", toggleDeliveryDetails);
 
-  // Explicitly connect all Zurück buttons to the calendar page.
-  document.querySelectorAll('[data-page="calendarPage"], #calendarBackButton, #menuBackButton, #menuBottomBackButton').forEach(function (button) {
-    button.addEventListener("click", function (event) {
-      event.preventDefault();
-      showCalendarPage();
-    });
-  });
+  bindNavigationButtons();
+  orderForm.addEventListener("submit", submitOrder);
 
-  // New landing page is the initial page.
+  // Start page is the initial page.
   showStartPage();
 });
-
-
-/* ===== Calendar and menu loading ===== */
-
-function mondayOfWeek(date) {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const day = d.getDay(); // Sun=0 ... Sat=6
-  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function getCalendarState(date, today) {
-  // Compare calendar dates only (no time component).
-  const d = dateOnly(date);
-  const t = dateOnly(today);
-  const dayOfWeek = d.getDay(); // Sun=0 ... Sat=6
-
-  // Saturday and Sunday are always unavailable.
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    return "gray";
-  }
-
-  // Friday rule:
-  // When today is Friday, the complete following Monday-Friday
-  // becomes available for ordering.
-  if (t.getDay() === 5) {
-    const nextMonday = new Date(t);
-    nextMonday.setDate(t.getDate() + 3);
-    nextMonday.setHours(0, 0, 0, 0);
-
-    const nextFriday = new Date(nextMonday);
-    nextFriday.setDate(nextMonday.getDate() + 4);
-    nextFriday.setHours(0, 0, 0, 0);
-
-    if (d >= nextMonday && d <= nextFriday) {
-      return "green";
-    }
-  }
-
-  // For the current week, future weekdays are available.
-  // Today and earlier weekdays are unavailable/red.
-  const currentMonday = mondayOfWeek(t);
-  const dateMonday = mondayOfWeek(d);
-
-  if (dateMonday.getTime() === currentMonday.getTime()) {
-    return d > t ? "green" : "red";
-  }
-
-  // All other weeks are unavailable.
-  return "gray";
-}
-
-function setMenuLoading(on){
-  const bar=document.getElementById("menuLoadingBar");
-  if(bar) bar.hidden=!on;
-  const page=document.getElementById("menuPage");
-  if(!page) return;
-  page.querySelectorAll(".menu-card,.menus-container,#menusContainer,#menuContainer,.delivery-section,#deliverySection,.order-details,.order-summary,#orderButton,.order-button,.total-section,.order-total")
-    .forEach(el=>el.classList.toggle("menu-content-loading-hidden",on));
-}
-function collapseDeliveryDetails(){
-  const d=document.getElementById("deliveryDetails")||document.querySelector(".delivery-fields");
-  const t=document.getElementById("deliveryToggle");
-  if(d) d.hidden=true;
-  if(t) t.setAttribute("aria-expanded","false");
-}
-function initDeliveryToggle(){
-  const d=document.getElementById("deliveryDetails")||document.querySelector(".delivery-fields");
-  const t=document.getElementById("deliveryToggle");
-  if(!d||!t||t.dataset.bound==="1") return;
-  t.dataset.bound="1";
-  t.addEventListener("click",()=>{
-    const open=d.hidden;
-    d.hidden=!open;
-    t.setAttribute("aria-expanded",String(open));
-  });
-}
-
-document.addEventListener("DOMContentLoaded",function(){
-  collapseDeliveryDetails();
-  initDeliveryToggle();
-  if(typeof renderCalendar==="function"){ renderCalendar(); }
-  document.querySelectorAll('#menuPage [data-page="startPage"]').forEach(b=>b.addEventListener("click",e=>{e.preventDefault();showStartPage();}));
-  document.querySelectorAll('#menuPage [data-page="calendarPage"]').forEach(b=>b.addEventListener("click",e=>{e.preventDefault();showCalendarPage();}));
-});
-/* menuNavV11 */

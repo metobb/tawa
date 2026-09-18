@@ -532,3 +532,73 @@ h1, h2 { margin-top: 0; }
   cursor: pointer !important;
   pointer-events: auto !important;
 }
+
+/* V15 menu page/loading cleanup */
+#menuPage[hidden],
+#menuPage.hidden,
+#orderContent.hidden,
+#menuLoadingBar[hidden] {
+  display: none !important;
+}
+
+#menuPage {
+  width: 100%;
+}
+
+.menu-loading-bar {
+  width: min(100%, 680px);
+  margin: 24px auto 28px;
+  background: var(--white);
+  border: 2px solid var(--fandango);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.menu-loading-content {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 18px;
+  color: var(--fandango);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.menu-loading-spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid #ead2e3;
+  border-top-color: var(--fandango);
+  border-radius: 50%;
+  animation: v15-spin 0.8s linear infinite;
+  flex: 0 0 auto;
+}
+
+.menu-loading-progress {
+  height: 6px;
+  background: #f0e3ec;
+  overflow: hidden;
+}
+
+.menu-loading-progress::after {
+  content: "";
+  display: block;
+  width: 35%;
+  height: 100%;
+  position: relative;
+  left: -35%;
+  background: var(--fandango);
+  animation: v15-slide 1.15s ease-in-out infinite;
+}
+
+@keyframes v15-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes v15-slide {
+  from { left: -35%; }
+  to { left: 100%; }
+}

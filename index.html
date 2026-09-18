@@ -35,30 +35,26 @@
     </section>
 
     <!-- Menu/order page -->
-    <section id="menuPage" class="page hidden">
-<div id="menuLoadingBar" class="menu-loading-bar" hidden aria-live="polite">
-  <div class="menu-loading-content"><span class="menu-loading-spinner"></span><span>Menüs werden geladen...</span></div>
-  <div class="menu-loading-progress"></div>
-</div>
-
+    <section id="menuPage" class="page hidden" aria-hidden="true">
       <div class="page-navigation">
-        <button id="homeTopButton" class="home-button" type="button" data-page="startPage">Startseite</button>
-        <button id="backTopButton" class="back-button" type="button" data-page="calendarPage">Zurück</button>
+        <button id="homeTopButton" class="home-button" type="button">Startseite</button>
+        <button id="backTopButton" class="back-button" type="button">Zurück</button>
       </div>
 
       <div class="order-header">
         <h1 id="selectedDateTitle"></h1>
       </div>
 
-      <!-- Visible while menus are being fetched -->
-      <div id="menuLoading" class="loading-bar hidden" role="status" aria-live="polite">
-        <div class="loading-bar-content">
-          <span class="loading-spinner" aria-hidden="true"></span>
+      <!-- Only this loading section is visible while menus are being fetched. -->
+      <div id="menuLoadingBar" class="menu-loading-bar" hidden aria-live="polite" role="status">
+        <div class="menu-loading-content">
+          <span class="menu-loading-spinner" aria-hidden="true"></span>
           <span>Menüs werden geladen...</span>
         </div>
-        <div class="loading-progress" aria-hidden="true"></div>
+        <div class="menu-loading-progress" aria-hidden="true"></div>
       </div>
 
+      <!-- Hidden until the menus have finished loading. -->
       <div id="orderContent" class="order-content hidden">
         <div id="menusContainer" class="menus-container"></div>
 
@@ -112,10 +108,11 @@
       </div>
 
       <div class="page-navigation page-navigation-bottom">
-        <button id="homeBottomButton" class="home-button" type="button" data-page="startPage">Startseite</button>
-        <button id="backBottomButton" class="back-button" type="button" data-page="calendarPage">Zurück</button>
+        <button id="homeBottomButton" class="home-button" type="button">Startseite</button>
+        <button id="backBottomButton" class="back-button" type="button">Zurück</button>
       </div>
     </section>
+
   </main>
 
   <div id="confirmationModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle">
