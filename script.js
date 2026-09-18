@@ -299,12 +299,14 @@ function toggleDeliveryDetails() {
 
   deliveryToggle.setAttribute("aria-expanded", String(nextExpanded));
   deliveryFields.hidden = !nextExpanded;
+  orderButton.hidden = !nextExpanded;
   deliveryToggle.classList.toggle("expanded", nextExpanded);
 }
 
 function resetDeliveryDetails() {
   deliveryToggle.setAttribute("aria-expanded", "false");
   deliveryFields.hidden = true;
+  orderButton.hidden = true;
   deliveryToggle.classList.remove("expanded");
 }
 
