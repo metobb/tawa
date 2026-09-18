@@ -250,7 +250,8 @@ function renderMenus() {
       const img = document.createElement("img");
       img.src = meal.picture;
       img.alt = meal.meal;
-      img.loading = "lazy";
+      img.loading = "eager";
+      img.decoding = "async";
       img.onerror = () => {
         img.style.display = "none";
       };

@@ -22,7 +22,8 @@ const CONFIG = {
   ORDERS_SHEET_NAME: "tawa_orders",
   ADMIN_EMAIL: "meteboncukcu@gmail.com",
   PRICE_PER_MENU: 8,
-  TIME_ZONE: Session.getScriptTimeZone() || "Europe/Berlin"
+  TIME_ZONE: Session.getScriptTimeZone() || "Europe/Berlin",
+  MEAL_PICTURE_FOLDER_NAME: "Meal Picture"
 };
 
 function doGet(e) {
@@ -106,9 +107,13 @@ function getMenusForDate(dateString) {
 
     const menuName = String(row[menuCol]).trim();
     const mealName = String(row[mealCol]).trim();
-    const picture = String(row[pictureCol]).trim();
+    const pictureName = String(row[pictureCol]).trim();
 
     if (!menuName || !mealName) return;
+
+    // Meal Picture contains the exact Google Drive file name, e.g.
+    // 21.09.2026_Menü 1_Türkisch Dumpling
+    const picture = getMealPictureUrl(pictureName);
 
     if (!grouped[menuName]) {
       grouped[menuName] = {
@@ -124,6 +129,73 @@ function getMenusForDate(dateString) {
   });
 
   return Object.values(grouped).slice(0, 2);
+}
+
+function getMealPictureUrl(fileName) {
+  if (!fileName) return "";
+
+  const cache = CacheService.getScriptCache();
+  const cacheKey = "mealPicture_" + Utilities.base64EncodeWebSafe(
+    Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, fileName)
+  );
+
+  const cachedUrl = cache.get(cacheKey);
+  if (cachedUrl) return cachedUrl;
+
+  const folder = getMealPictureFolder();
+  const file = findMealPictureFile(folder, fileName);
+
+  if (!file) {
+    console.warn(`Meal picture not found: ${fileName}`);
+    return "";
+  }
+  const fileId = file.getId();
+
+  // Google Drive thumbnail endpoint is suitable for direct browser display
+  // and avoids routing the image bytes through the Apps Script API.
+  const imageUrl = `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w1200`;
+
+  cache.put(cacheKey, imageUrl, 21600);
+  return imageUrl;
+}
+
+function findMealPictureFile(folder, fileName) {
+  // Prefer an exact match first.
+  let files = folder.getFilesByName(fileName);
+  if (files.hasNext()) return files.next();
+
+  // Drive image files normally have an extension, while the spreadsheet
+  // stores the designation without the extension.
+  const extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
+  for (const extension of extensions) {
+    files = folder.getFilesByName(fileName + extension);
+    if (files.hasNext()) return files.next();
+  }
+
+  return null;
+}
+
+function getMealPictureFolder() {
+  const cache = CacheService.getScriptCache();
+  const folderCacheKey = "mealPictureFolderId";
+  const cachedFolderId = cache.get(folderCacheKey);
+
+  if (cachedFolderId) {
+    try {
+      return DriveApp.getFolderById(cachedFolderId);
+    } catch (error) {
+      console.warn("Cached Meal Picture folder ID is no longer valid. Searching by name.");
+    }
+  }
+
+  const folders = DriveApp.getFoldersByName(CONFIG.MEAL_PICTURE_FOLDER_NAME);
+  if (!folders.hasNext()) {
+    throw new Error(`Google Drive folder "${CONFIG.MEAL_PICTURE_FOLDER_NAME}" was not found.`);
+  }
+
+  const folder = folders.next();
+  cache.put(folderCacheKey, folder.getId(), 21600);
+  return folder;
 }
 
 function saveOrder(payload) {
