@@ -189,6 +189,8 @@ async function openOrderPage(dateString) {
     setMenuLoading(false);
     showError("Die Menüs konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
   }
+
+  applyCalendarAvailability();
 }
 
 function renderMenus() {
@@ -493,47 +495,87 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 /* ===== V11 calendar and menu loading ===== */
-function mondayOfWeek(date){
-  const d=new Date(date.getFullYear(),date.getMonth(),date.getDate());
-  const day=d.getDay();
-  d.setDate(d.getDate()+(day===0?-6:1-day));
-  d.setHours(0,0,0,0);
+
+function mondayOfWeek(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = d.getDay(); // Sun=0 ... Sat=6
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  d.setHours(0, 0, 0, 0);
   return d;
 }
-function calendarState(date,today=new Date()){
-  const d=new Date(date.getFullYear(),date.getMonth(),date.getDate());
-  const t=new Date(today.getFullYear(),today.getMonth(),today.getDate());
-  const wd=d.getDay();
-  if(wd===0||wd===6) return "gray";
-  const diff=Math.round((mondayOfWeek(d)-mondayOfWeek(t))/(7*24*60*60*1000));
-  if(t.getDay()===5 && diff===1) return "green";
-  if(diff===0){
-    if(d<=t) return "red";
+
+function getCalendarState(date, today) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  // Weekend is always inactive/gray.
+  if (d.getDay() === 0 || d.getDay() === 6) return "gray";
+
+  const currentMonday = mondayOfWeek(t);
+  const dateMonday = mondayOfWeek(d);
+  const weekDifference = Math.round(
+    (dateMonday.getTime() - currentMonday.getTime()) /
+    (7 * 24 * 60 * 60 * 1000)
+  );
+
+  // Friday: ALL Monday-Friday dates in the immediately following week
+  // are active. This is the special rule requested for ordering.
+  if (t.getDay() === 5 && weekDifference === 1) {
     return "green";
   }
+
+  // During the current week, only future weekdays are active.
+  if (weekDifference === 0) {
+    return d > t ? "green" : "red";
+  }
+
+  // Everything else is inactive/gray.
   return "gray";
 }
-function applyCalendarAvailability(){
-  const cal=document.getElementById("calendar");
-  if(!cal) return;
-  cal.querySelectorAll("[data-date],[data-date-string]").forEach(el=>{
-    const raw=el.dataset.date||el.dataset.dateString;
-    let d=null;
-    if(/^\d{2}\.\d{2}\.\d{4}$/.test(raw)){
-      const p=raw.split("."); d=new Date(+p[2],+p[1]-1,+p[0]);
-    } else if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){
-      const p=raw.split("-"); d=new Date(+p[0],+p[1]-1,+p[2]);
+
+function styleCalendarCell(cell, date) {
+  const state = getCalendarState(date, new Date());
+
+  cell.classList.remove(
+    "active-green", "inactive-red", "inactive-gray",
+    "active", "available", "inactive", "past", "today"
+  );
+
+  if (state === "green") {
+    cell.classList.add("active-green");
+    cell.disabled = false;
+    cell.setAttribute("aria-disabled", "false");
+  } else if (state === "red") {
+    cell.classList.add("inactive-red");
+    cell.disabled = true;
+    cell.setAttribute("aria-disabled", "true");
+  } else {
+    cell.classList.add("inactive-gray");
+    cell.disabled = true;
+    cell.setAttribute("aria-disabled", "true");
+  }
+
+  return state;
+}
+
+function applyCalendarAvailability() {
+  const calendar = document.getElementById("calendar");
+  if (!calendar) return;
+
+  // Support data-date values when available.
+  calendar.querySelectorAll("[data-date], [data-date-string]").forEach(function(cell) {
+    const raw = cell.dataset.date || cell.dataset.dateString;
+    let date = null;
+
+    if (/^\d{2}\.\d{2}\.\d{4}$/.test(raw)) {
+      const p = raw.split(".");
+      date = new Date(Number(p[2]), Number(p[1]) - 1, Number(p[0]));
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      const p = raw.split("-");
+      date = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
     }
-    if(!d) return;
-    const s=calendarState(d);
-    el.classList.remove("active-green","inactive-red","inactive-gray","active","available","inactive","past","today");
-    if(s==="green"){
-      el.classList.add("active-green"); el.disabled=false; el.setAttribute("aria-disabled","false");
-    }else if(s==="red"){
-      el.classList.add("inactive-red"); el.disabled=true; el.setAttribute("aria-disabled","true");
-    }else{
-      el.classList.add("inactive-gray"); el.disabled=true; el.setAttribute("aria-disabled","true");
-    }
+
+    if (date) styleCalendarCell(cell, date);
   });
 }
 function setMenuLoading(on){
@@ -570,3 +612,43 @@ document.addEventListener("DOMContentLoaded",function(){
   document.querySelectorAll('#menuPage [data-page="calendarPage"]').forEach(b=>b.addEventListener("click",e=>{e.preventDefault();showCalendarPage();}));
 });
 /* menuNavV11 */
+
+/* v12FridayCalendarFallback */
+function applyFridayCalendarRule() {
+  const calendar = document.getElementById("calendar");
+  if (!calendar) return;
+
+  const today = new Date();
+  if (today.getDay() !== 5) return;
+
+  const nextMonday = new Date(
+    today.getFullYear(), today.getMonth(), today.getDate() + 3
+  );
+  nextMonday.setHours(0,0,0,0);
+
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(nextMonday);
+    d.setDate(nextMonday.getDate() + i);
+
+    const dd = String(d.getDate()).padStart(2,"0");
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const yyyy = d.getFullYear();
+    const iso = `${yyyy}-${mm}-${dd}`;
+    const de = `${dd}.${mm}.${yyyy}`;
+
+    calendar.querySelectorAll(
+      `[data-date="${iso}"], [data-date="${de}"], ` +
+      `[data-date-string="${iso}"], [data-date-string="${de}"], ` +
+      `[data-date-value="${iso}"], [data-date-value="${de}"]`
+    ).forEach(function(cell) {
+      cell.classList.remove("inactive-gray","inactive-red","past","inactive");
+      cell.classList.add("active-green");
+      cell.disabled = false;
+      cell.removeAttribute("aria-disabled");
+    });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  applyFridayCalendarRule();
+});

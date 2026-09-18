@@ -507,3 +507,17 @@ h1, h2 { margin-top: 0; }
 
 /* V11 collapsed delivery */
 .delivery-fields[hidden],#deliveryDetails[hidden]{display:none!important}
+
+/* V12: active dates in the following week on Friday must remain selectable. */
+#calendar .active-green {
+  background: #2f9e44 !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+}
+#calendar .active-green:disabled {
+  background: #2f9e44 !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+}
