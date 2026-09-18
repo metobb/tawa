@@ -72,13 +72,9 @@ function showStartPage() {
 }
 
 function showCalendarPage() {
-  confirmationModal.classList.add("hidden");
-  errorModal.classList.add("hidden");
-  startPage.classList.add("hidden");
-  orderPage.classList.add("hidden");
-  calendarPage.classList.remove("hidden");
-  renderCalendar();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  showPage("calendarPage");
+  if (typeof renderCalendar === "function") renderCalendar();
+  if (typeof applyCalendarAvailability === "function") applyCalendarAvailability();
 }
 
 function showOrderPage(dateString) {
@@ -149,6 +145,9 @@ function renderCalendar() {
 }
 
 async function openOrderPage(dateString) {
+  /* openOrderPage__v11 */
+  setMenuLoading(true);
+  collapseDeliveryDetails();
   selectedMenuDate = dateString;
   selectedDateTitle.textContent = `Menüs für ${dateString}`;
   menusContainer.innerHTML = "";
@@ -178,12 +177,16 @@ async function openOrderPage(dateString) {
     }
 
     renderMenus();
+    setMenuLoading(false);
+    collapseDeliveryDetails();
+    initDeliveryToggle();
     menuLoading.classList.add("hidden");
     orderContent.classList.remove("hidden");
   } catch (error) {
     console.error(error);
     menuLoading.classList.add("hidden");
     orderContent.classList.add("hidden");
+    setMenuLoading(false);
     showError("Die Menüs konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
   }
 }
@@ -487,3 +490,83 @@ document.addEventListener("DOMContentLoaded", function () {
   // New landing page is the initial page.
   showStartPage();
 });
+
+
+/* ===== V11 calendar and menu loading ===== */
+function mondayOfWeek(date){
+  const d=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+  const day=d.getDay();
+  d.setDate(d.getDate()+(day===0?-6:1-day));
+  d.setHours(0,0,0,0);
+  return d;
+}
+function calendarState(date,today=new Date()){
+  const d=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+  const t=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+  const wd=d.getDay();
+  if(wd===0||wd===6) return "gray";
+  const diff=Math.round((mondayOfWeek(d)-mondayOfWeek(t))/(7*24*60*60*1000));
+  if(t.getDay()===5 && diff===1) return "green";
+  if(diff===0){
+    if(d<=t) return "red";
+    return "green";
+  }
+  return "gray";
+}
+function applyCalendarAvailability(){
+  const cal=document.getElementById("calendar");
+  if(!cal) return;
+  cal.querySelectorAll("[data-date],[data-date-string]").forEach(el=>{
+    const raw=el.dataset.date||el.dataset.dateString;
+    let d=null;
+    if(/^\d{2}\.\d{2}\.\d{4}$/.test(raw)){
+      const p=raw.split("."); d=new Date(+p[2],+p[1]-1,+p[0]);
+    } else if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){
+      const p=raw.split("-"); d=new Date(+p[0],+p[1]-1,+p[2]);
+    }
+    if(!d) return;
+    const s=calendarState(d);
+    el.classList.remove("active-green","inactive-red","inactive-gray","active","available","inactive","past","today");
+    if(s==="green"){
+      el.classList.add("active-green"); el.disabled=false; el.setAttribute("aria-disabled","false");
+    }else if(s==="red"){
+      el.classList.add("inactive-red"); el.disabled=true; el.setAttribute("aria-disabled","true");
+    }else{
+      el.classList.add("inactive-gray"); el.disabled=true; el.setAttribute("aria-disabled","true");
+    }
+  });
+}
+function setMenuLoading(on){
+  const bar=document.getElementById("menuLoadingBar");
+  if(bar) bar.hidden=!on;
+  const page=document.getElementById("menuPage");
+  if(!page) return;
+  page.querySelectorAll(".menu-card,.menus-container,#menusContainer,#menuContainer,.delivery-section,#deliverySection,.order-details,.order-summary,#orderButton,.order-button,.total-section,.order-total")
+    .forEach(el=>el.classList.toggle("menu-content-loading-hidden",on));
+}
+function collapseDeliveryDetails(){
+  const d=document.getElementById("deliveryDetails")||document.querySelector(".delivery-fields");
+  const t=document.getElementById("deliveryToggle");
+  if(d) d.hidden=true;
+  if(t) t.setAttribute("aria-expanded","false");
+}
+function initDeliveryToggle(){
+  const d=document.getElementById("deliveryDetails")||document.querySelector(".delivery-fields");
+  const t=document.getElementById("deliveryToggle");
+  if(!d||!t||t.dataset.bound==="1") return;
+  t.dataset.bound="1";
+  t.addEventListener("click",()=>{
+    const open=d.hidden;
+    d.hidden=!open;
+    t.setAttribute("aria-expanded",String(open));
+  });
+}
+
+document.addEventListener("DOMContentLoaded",function(){
+  collapseDeliveryDetails();
+  initDeliveryToggle();
+  if(typeof renderCalendar==="function"){ renderCalendar(); applyCalendarAvailability(); }
+  document.querySelectorAll('#menuPage [data-page="startPage"]').forEach(b=>b.addEventListener("click",e=>{e.preventDefault();showStartPage();}));
+  document.querySelectorAll('#menuPage [data-page="calendarPage"]').forEach(b=>b.addEventListener("click",e=>{e.preventDefault();showCalendarPage();}));
+});
+/* menuNavV11 */

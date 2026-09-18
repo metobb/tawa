@@ -30,15 +30,20 @@
         <h1>Bestelldatum auswählen</h1>
         <div id="calendar" class="calendar" aria-label="Menükalender"></div>
         <p class="calendar-help">Die nächsten verfügbaren Tage sind grün markiert.</p>
-        <button id="calendarHomeButton" class="home-button" type="button">Startseite</button>
+        <button id="calendarHomeButton" class="home-button" type="button" data-page="startPage">Startseite</button>
       </div>
     </section>
 
     <!-- Menu/order page -->
     <section id="menuPage" class="page hidden">
+<div id="menuLoadingBar" class="menu-loading-bar" hidden aria-live="polite">
+  <div class="menu-loading-content"><span class="menu-loading-spinner"></span><span>Menüs werden geladen...</span></div>
+  <div class="menu-loading-progress"></div>
+</div>
+
       <div class="page-navigation">
-        <button id="homeTopButton" class="home-button" type="button">Startseite</button>
-        <button id="backTopButton" class="back-button" type="button">Zurück</button>
+        <button id="homeTopButton" class="home-button" type="button" data-page="startPage">Startseite</button>
+        <button id="backTopButton" class="back-button" type="button" data-page="calendarPage">Zurück</button>
       </div>
 
       <div class="order-header">
@@ -107,8 +112,8 @@
       </div>
 
       <div class="page-navigation page-navigation-bottom">
-        <button id="homeBottomButton" class="home-button" type="button">Startseite</button>
-        <button id="backBottomButton" class="back-button" type="button">Zurück</button>
+        <button id="homeBottomButton" class="home-button" type="button" data-page="startPage">Startseite</button>
+        <button id="backBottomButton" class="back-button" type="button" data-page="calendarPage">Zurück</button>
       </div>
     </section>
   </main>
@@ -117,7 +122,7 @@
     <div class="modal-card">
       <h2 id="confirmationTitle">Bestellung bestätigt</h2>
       <p>Ihre Bestellung ist bei uns eingegangen. Die Lieferung erfolgt täglich zwischen 18:30 und 19:00 Uhr. Sie erhalten eine Bestätigungs-E-Mail. Durch eine Antwort auf diese E-Mail können Sie die Bestellung ändern oder stornieren.</p>
-      <button id="confirmationHomeButton" class="home-button" type="button">Startseite</button>
+      <button id="confirmationHomeButton" class="home-button" type="button" data-page="startPage">Startseite</button>
     </div>
   </div>
 

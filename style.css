@@ -488,3 +488,22 @@ h1, h2 { margin-top: 0; }
 .delivery-fields[hidden] {
   display: none !important;
 }
+
+/* V11 calendar states */
+#calendar .active-green{background:#2f9e44!important;color:#fff!important;cursor:pointer}
+#calendar .inactive-red{background:#d64545!important;color:#fff!important;cursor:not-allowed}
+#calendar .inactive-gray{background:#d9d9d9!important;color:#777!important;cursor:not-allowed}
+
+/* V11 menu loading */
+.menu-loading-bar{width:min(900px,calc(100% - 32px));margin:24px auto;border-radius:12px;background:#fff;box-shadow:0 5px 18px rgba(0,0,0,.14);overflow:hidden}
+.menu-loading-bar[hidden]{display:none!important}
+.menu-loading-content{display:flex;align-items:center;justify-content:center;gap:12px;min-height:58px;padding:12px 18px;font-weight:700}
+.menu-loading-spinner{width:22px;height:22px;border:3px solid #ddd;border-top-color:#b53389;border-radius:50%;animation:v11spin .8s linear infinite}
+.menu-loading-progress{height:5px;overflow:hidden;background:#eee}
+.menu-loading-progress:after{content:"";display:block;position:relative;left:-35%;width:35%;height:100%;background:#b53389;animation:v11slide 1.1s ease-in-out infinite}
+@keyframes v11spin{to{transform:rotate(360deg)}}
+@keyframes v11slide{from{left:-35%}to{left:100%}}
+.menu-content-loading-hidden{display:none!important}
+
+/* V11 collapsed delivery */
+.delivery-fields[hidden],#deliveryDetails[hidden]{display:none!important}
