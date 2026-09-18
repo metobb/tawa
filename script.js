@@ -22,9 +22,13 @@ const deliveryFields = document.getElementById("deliveryFields");
 const confirmationModal = document.getElementById("confirmationModal");
 const errorModal = document.getElementById("errorModal");
 const errorMessage = document.getElementById("errorMessage");
+const leaveModal = document.getElementById("leaveModal");
+const leaveYesButton = document.getElementById("leaveYesButton");
+const leaveNoButton = document.getElementById("leaveNoButton");
 
 let selectedMenuDate = "";
 let currentMenus = [];
+let pendingLeavePage = "";
 
 function dateOnly(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -93,6 +97,7 @@ function showPage(pageId) {
 function showStartPage() {
   confirmationModal.classList.add("hidden");
   errorModal.classList.add("hidden");
+  leaveModal.classList.add("hidden");
   resetOrderPage();
   showPage("startPage");
 }
@@ -100,6 +105,7 @@ function showStartPage() {
 function showCalendarPage() {
   confirmationModal.classList.add("hidden");
   errorModal.classList.add("hidden");
+  leaveModal.classList.add("hidden");
   showPage("calendarPage");
   renderCalendar();
 }
@@ -107,6 +113,7 @@ function showCalendarPage() {
 function showOrderPage(dateString) {
   confirmationModal.classList.add("hidden");
   errorModal.classList.add("hidden");
+  leaveModal.classList.add("hidden");
 
   selectedMenuDate = dateString;
   selectedDateTitle.textContent = `Menüs für ${dateString}`;
@@ -383,21 +390,67 @@ async function submitOrder(event) {
   }
 }
 
+function hasMenuSelections() {
+  return getSelectedOrders().length > 0;
+}
+
+function requestLeaveMenuPage(targetPage) {
+  if (!hasMenuSelections()) {
+    if (targetPage === "startPage") {
+      showStartPage();
+    } else {
+      resetOrderPage();
+      showCalendarPage();
+    }
+    return;
+  }
+
+  pendingLeavePage = targetPage;
+  leaveModal.classList.remove("hidden");
+}
+
+function confirmLeaveMenuPage() {
+  const targetPage = pendingLeavePage;
+  pendingLeavePage = "";
+  leaveModal.classList.add("hidden");
+
+  // Leaving the menu page deliberately removes the current selections/details.
+  resetOrderPage();
+
+  if (targetPage === "startPage") {
+    showStartPage();
+  } else if (targetPage === "calendarPage") {
+    showCalendarPage();
+  }
+}
+
+function cancelLeaveMenuPage() {
+  pendingLeavePage = "";
+  leaveModal.classList.add("hidden");
+}
+
 function bindNavigationButtons() {
   [
     document.getElementById("homeTopButton"),
-    document.getElementById("homeBottomButton"),
-    document.getElementById("confirmationHomeButton")
+    document.getElementById("homeBottomButton")
   ].forEach(button => {
-    if (button) button.addEventListener("click", showStartPage);
+    if (button) button.addEventListener("click", () => requestLeaveMenuPage("startPage"));
   });
 
   [
     document.getElementById("backTopButton"),
     document.getElementById("backBottomButton")
   ].forEach(button => {
-    if (button) button.addEventListener("click", showCalendarPage);
+    if (button) button.addEventListener("click", () => requestLeaveMenuPage("calendarPage"));
   });
+
+  const confirmationHomeButton = document.getElementById("confirmationHomeButton");
+  if (confirmationHomeButton) {
+    confirmationHomeButton.addEventListener("click", showStartPage);
+  }
+
+  if (leaveYesButton) leaveYesButton.addEventListener("click", confirmLeaveMenuPage);
+  if (leaveNoButton) leaveNoButton.addEventListener("click", cancelLeaveMenuPage);
 
   document.getElementById("errorCloseButton").addEventListener("click", () => {
     errorModal.classList.add("hidden");

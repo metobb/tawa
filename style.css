@@ -612,3 +612,21 @@ h1, h2 { margin-top: 0; }
 
 /* V17: hide Gesamtsumme while Lieferdetails is collapsed. */
 #orderSummary[hidden] { display: none !important; }
+
+
+/* V19: navigation confirmation buttons */
+.leave-modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.leave-modal-buttons button {
+  min-width: 110px;
+}
+
+.leave-modal-buttons .back-button {
+  background: #777;
+  color: var(--white);
+}
