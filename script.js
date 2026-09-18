@@ -7,7 +7,7 @@ const PRICE_PER_MENU = 8;
 
 const startPage = document.getElementById("startPage");
 const calendarPage = document.getElementById("calendarPage");
-const orderPage = document.getElementById("orderPage");
+const orderPage = document.getElementById("menuPage");
 const calendar = document.getElementById("calendar");
 const menusContainer = document.getElementById("menusContainer");
 const selectedDateTitle = document.getElementById("selectedDateTitle");
@@ -25,9 +25,7 @@ const errorMessage = document.getElementById("errorMessage");
 let selectedMenuDate = "";
 let currentMenus = [];
 
-// The ordering window is based on the current week:
-// today and all previous days are inactive; the next two weekdays are active;
-// weekends and all other dates are inactive.
+// Calendar availability is calculated directly when each date cell is created.
 function startOfWeekMonday(date) {
   const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const day = result.getDay();
@@ -74,7 +72,6 @@ function showStartPage() {
 function showCalendarPage() {
   showPage("calendarPage");
   if (typeof renderCalendar === "function") renderCalendar();
-  if (typeof applyCalendarAvailability === "function") applyCalendarAvailability();
 }
 
 function showOrderPage(dateString) {
@@ -122,6 +119,7 @@ function renderCalendar() {
     button.className = "calendar-day";
     button.textContent = day;
     button.dataset.date = dateString;
+    button.dataset.dateIso = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     button.disabled = state !== "green";
     button.setAttribute("aria-disabled", state === "green" ? "false" : "true");
 
@@ -184,7 +182,6 @@ async function openOrderPage(dateString) {
     showError("Die Menüs konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
   }
 
-  applyCalendarAvailability();
 }
 
 function renderMenus() {
@@ -385,7 +382,7 @@ function showError(message) {
 
 
 document.addEventListener("DOMContentLoaded", function () {
-  const abendessenButton = document.getElementById("abendessenButton");
+  const abendessenButton = document.getElementById("dinnerButton");
   if (!abendessenButton) return;
 
   abendessenButton.addEventListener("click", function (event) {
@@ -448,7 +445,7 @@ function showStartPage() {
 
 function showCalendarPage() {
   showPage("calendarPage");
-  // Calendar rendering is independent of page visibility.
+  // Render the calendar using the current availability rules.
   if (typeof renderCalendar === "function") {
     renderCalendar();
   }
@@ -459,7 +456,7 @@ function showMenuPage() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  const dinnerButton = document.getElementById("abendessenButton");
+  const dinnerButton = document.getElementById("dinnerButton");
   if (dinnerButton) {
     dinnerButton.addEventListener("click", function (event) {
       event.preventDefault();
@@ -488,7 +485,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-/* ===== V11 calendar and menu loading ===== */
+/* ===== Calendar and menu loading ===== */
 
 function mondayOfWeek(date) {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -499,79 +496,46 @@ function mondayOfWeek(date) {
 }
 
 function getCalendarState(date, today) {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  // Compare calendar dates only (no time component).
+  const d = dateOnly(date);
+  const t = dateOnly(today);
+  const dayOfWeek = d.getDay(); // Sun=0 ... Sat=6
 
-  // Weekend is always inactive/gray.
-  if (d.getDay() === 0 || d.getDay() === 6) return "gray";
-
-  const currentMonday = mondayOfWeek(t);
-  const dateMonday = mondayOfWeek(d);
-  const weekDifference = Math.round(
-    (dateMonday.getTime() - currentMonday.getTime()) /
-    (7 * 24 * 60 * 60 * 1000)
-  );
-
-  // Friday: ALL Monday-Friday dates in the immediately following week
-  // are active. This is the special rule requested for ordering.
-  if (t.getDay() === 5 && weekDifference === 1) {
-    return "green";
+  // Saturday and Sunday are always unavailable.
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    return "gray";
   }
 
-  // During the current week, only future weekdays are active.
-  if (weekDifference === 0) {
+  // Friday rule:
+  // When today is Friday, the complete following Monday-Friday
+  // becomes available for ordering.
+  if (t.getDay() === 5) {
+    const nextMonday = new Date(t);
+    nextMonday.setDate(t.getDate() + 3);
+    nextMonday.setHours(0, 0, 0, 0);
+
+    const nextFriday = new Date(nextMonday);
+    nextFriday.setDate(nextMonday.getDate() + 4);
+    nextFriday.setHours(0, 0, 0, 0);
+
+    if (d >= nextMonday && d <= nextFriday) {
+      return "green";
+    }
+  }
+
+  // For the current week, future weekdays are available.
+  // Today and earlier weekdays are unavailable/red.
+  const currentMonday = mondayOfWeek(t);
+  const dateMonday = mondayOfWeek(d);
+
+  if (dateMonday.getTime() === currentMonday.getTime()) {
     return d > t ? "green" : "red";
   }
 
-  // Everything else is inactive/gray.
+  // All other weeks are unavailable.
   return "gray";
 }
 
-function styleCalendarCell(cell, date) {
-  const state = getCalendarState(date, new Date());
-
-  cell.classList.remove(
-    "active-green", "inactive-red", "inactive-gray",
-    "active", "available", "inactive", "past", "today"
-  );
-
-  if (state === "green") {
-    cell.classList.add("active-green");
-    cell.disabled = false;
-    cell.setAttribute("aria-disabled", "false");
-  } else if (state === "red") {
-    cell.classList.add("inactive-red");
-    cell.disabled = true;
-    cell.setAttribute("aria-disabled", "true");
-  } else {
-    cell.classList.add("inactive-gray");
-    cell.disabled = true;
-    cell.setAttribute("aria-disabled", "true");
-  }
-
-  return state;
-}
-
-function applyCalendarAvailability() {
-  const calendar = document.getElementById("calendar");
-  if (!calendar) return;
-
-  // Support data-date values when available.
-  calendar.querySelectorAll("[data-date], [data-date-string]").forEach(function(cell) {
-    const raw = cell.dataset.date || cell.dataset.dateString;
-    let date = null;
-
-    if (/^\d{2}\.\d{2}\.\d{4}$/.test(raw)) {
-      const p = raw.split(".");
-      date = new Date(Number(p[2]), Number(p[1]) - 1, Number(p[0]));
-    } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-      const p = raw.split("-");
-      date = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
-    }
-
-    if (date) styleCalendarCell(cell, date);
-  });
-}
 function setMenuLoading(on){
   const bar=document.getElementById("menuLoadingBar");
   if(bar) bar.hidden=!on;
@@ -601,7 +565,7 @@ function initDeliveryToggle(){
 document.addEventListener("DOMContentLoaded",function(){
   collapseDeliveryDetails();
   initDeliveryToggle();
-  if(typeof renderCalendar==="function"){ renderCalendar(); applyCalendarAvailability(); }
+  if(typeof renderCalendar==="function"){ renderCalendar(); }
   document.querySelectorAll('#menuPage [data-page="startPage"]').forEach(b=>b.addEventListener("click",e=>{e.preventDefault();showStartPage();}));
   document.querySelectorAll('#menuPage [data-page="calendarPage"]').forEach(b=>b.addEventListener("click",e=>{e.preventDefault();showCalendarPage();}));
 });
