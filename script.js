@@ -91,7 +91,6 @@ function renderCalendar() {
   const today = dateOnly(new Date());
   const year = today.getFullYear();
   const month = today.getMonth();
-  const weekStart = startOfWeekMonday(today);
 
   const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
   weekdays.forEach(day => {
@@ -111,35 +110,30 @@ function renderCalendar() {
     calendar.appendChild(empty);
   }
 
-  // Only the two weekdays immediately after today are active.
-  // The remaining days of the current week are red (past/today), while all
-  // other dates are gray/inactive. Weekends are always gray/inactive.
+  // The availability state is calculated here, when each date cell is created.
+  // This avoids relying on a later DOM post-processing step.
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
-    const offsetFromToday = daysBetween(today, date);
-    const dayOfWeek = date.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    const inCurrentWeek = daysBetween(weekStart, date) >= 0 && daysBetween(weekStart, date) <= 6;
+    const state = getCalendarState(date, today);
+    const dateString = displayDate(date);
 
     const button = document.createElement("button");
     button.type = "button";
     button.className = "calendar-day";
     button.textContent = day;
-    button.disabled = true;
+    button.dataset.date = dateString;
+    button.disabled = state !== "green";
+    button.setAttribute("aria-disabled", state === "green" ? "false" : "true");
 
-    if (inCurrentWeek && !isWeekend && offsetFromToday <= 0) {
-      button.classList.add("past");
-    } else if (inCurrentWeek && !isWeekend && (offsetFromToday === 1 || offsetFromToday === 2)) {
-      button.classList.add("active");
-      button.disabled = false;
-      button.addEventListener("click", () => showOrderPage(displayDate(date)));
-    } else if (offsetFromToday === 0) {
-      // Today is red, even if it is a weekend.
-      button.classList.add("today");
+    if (state === "green") {
+      button.classList.add("active-green");
+      button.addEventListener("click", () => showOrderPage(dateString));
+    } else if (state === "red") {
+      button.classList.add("inactive-red");
     } else {
-      button.classList.add("inactive");
+      button.classList.add("inactive-gray");
     }
-  
+
     calendar.appendChild(button);
   }
 }
@@ -612,43 +606,3 @@ document.addEventListener("DOMContentLoaded",function(){
   document.querySelectorAll('#menuPage [data-page="calendarPage"]').forEach(b=>b.addEventListener("click",e=>{e.preventDefault();showCalendarPage();}));
 });
 /* menuNavV11 */
-
-/* v12FridayCalendarFallback */
-function applyFridayCalendarRule() {
-  const calendar = document.getElementById("calendar");
-  if (!calendar) return;
-
-  const today = new Date();
-  if (today.getDay() !== 5) return;
-
-  const nextMonday = new Date(
-    today.getFullYear(), today.getMonth(), today.getDate() + 3
-  );
-  nextMonday.setHours(0,0,0,0);
-
-  for (let i = 0; i < 5; i++) {
-    const d = new Date(nextMonday);
-    d.setDate(nextMonday.getDate() + i);
-
-    const dd = String(d.getDate()).padStart(2,"0");
-    const mm = String(d.getMonth()+1).padStart(2,"0");
-    const yyyy = d.getFullYear();
-    const iso = `${yyyy}-${mm}-${dd}`;
-    const de = `${dd}.${mm}.${yyyy}`;
-
-    calendar.querySelectorAll(
-      `[data-date="${iso}"], [data-date="${de}"], ` +
-      `[data-date-string="${iso}"], [data-date-string="${de}"], ` +
-      `[data-date-value="${iso}"], [data-date-value="${de}"]`
-    ).forEach(function(cell) {
-      cell.classList.remove("inactive-gray","inactive-red","past","inactive");
-      cell.classList.add("active-green");
-      cell.disabled = false;
-      cell.removeAttribute("aria-disabled");
-    });
-  }
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-  applyFridayCalendarRule();
-});
