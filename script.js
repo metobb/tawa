@@ -15,6 +15,7 @@ const menuLoadingBar = document.getElementById("menuLoadingBar");
 const orderContent = document.getElementById("orderContent");
 const orderForm = document.getElementById("orderForm");
 const totalPrice = document.getElementById("totalPrice");
+const orderSummary = document.getElementById("orderSummary");
 const orderButton = document.getElementById("orderButton");
 const deliveryToggle = document.getElementById("deliveryToggle");
 const deliveryFields = document.getElementById("deliveryFields");
@@ -300,6 +301,7 @@ function toggleDeliveryDetails() {
   deliveryToggle.setAttribute("aria-expanded", String(nextExpanded));
   deliveryFields.hidden = !nextExpanded;
   orderButton.hidden = !nextExpanded;
+  orderSummary.hidden = !nextExpanded;
   deliveryToggle.classList.toggle("expanded", nextExpanded);
 }
 
@@ -307,6 +309,7 @@ function resetDeliveryDetails() {
   deliveryToggle.setAttribute("aria-expanded", "false");
   deliveryFields.hidden = true;
   orderButton.hidden = true;
+  orderSummary.hidden = true;
   deliveryToggle.classList.remove("expanded");
 }
 

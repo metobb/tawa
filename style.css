@@ -607,3 +607,7 @@ h1, h2 { margin-top: 0; }
   from { left: -35%; }
   to { left: 100%; }
 }
+
+
+/* V17: hide Gesamtsumme while Lieferdetails is collapsed. */
+#orderSummary[hidden] { display: none !important; }
