@@ -274,9 +274,11 @@ function renderMenus() {
     const controls = document.createElement("div");
     controls.className = "menu-controls";
 
-    const price = document.createElement("div");
-    price.className = "menu-price";
-    price.textContent = `${PRICE_PER_MENU.toFixed(2)} €`;
+    // Quantity selector: the visible button uses the same chevron symbol
+    // as the "Bestellen" delivery-details button. The native select remains
+    // underneath so the existing quantity-selection logic is unchanged.
+    const amountWrap = document.createElement("div");
+    amountWrap.className = "menu-amount-wrap";
 
     const select = document.createElement("select");
     select.className = "menu-amount";
@@ -285,7 +287,7 @@ function renderMenus() {
 
     const zero = document.createElement("option");
     zero.value = "0";
-    zero.textContent = "—";
+    zero.textContent = "Anzahl";
     select.appendChild(zero);
 
     for (let amount = 1; amount <= 10; amount++) {
@@ -295,10 +297,29 @@ function renderMenus() {
       select.appendChild(option);
     }
 
+    const amountLabel = document.createElement("span");
+    amountLabel.className = "menu-amount-label";
+    amountLabel.textContent = "Anzahl";
+
+    const amountChevron = document.createElement("span");
+    amountChevron.className = "menu-amount-chevron";
+    amountChevron.setAttribute("aria-hidden", "true");
+    amountChevron.textContent = "▼";
+
+    amountWrap.appendChild(select);
+    amountWrap.appendChild(amountLabel);
+    amountWrap.appendChild(amountChevron);
+
     select.addEventListener("change", updateTotal);
 
+    const price = document.createElement("div");
+    price.className = "menu-price";
+    price.textContent = `${PRICE_PER_MENU.toFixed(2)} €`;
+
+    // Selection button above the price box. The selector is twice as wide
+    // as the price box and both use the same height.
+    controls.appendChild(amountWrap);
     controls.appendChild(price);
-    controls.appendChild(select);
     card.appendChild(controls);
     menusContainer.appendChild(card);
   });
