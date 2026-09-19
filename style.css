@@ -137,9 +137,9 @@ h1, h2 { margin-top: 0; }
 
 .calendar-day.past,
 .calendar-day.today {
-  color: var(--red);
-  border-color: var(--red);
-  background: #fff5f5;
+  color: #888;
+  border-color: #aaa;
+  background: var(--light-gray);
 }
 
 .calendar-day.inactive {
@@ -492,7 +492,7 @@ h1, h2 { margin-top: 0; }
 
 /* V11 calendar states */
 #calendar .active-green{background:#2f9e44!important;color:#fff!important;cursor:pointer}
-#calendar .inactive-red{background:#d64545!important;color:#fff!important;cursor:not-allowed}
+#calendar .inactive-red{background:#d9d9d9!important;color:#777!important;cursor:not-allowed}
 #calendar .inactive-gray{background:#d9d9d9!important;color:#777!important;cursor:not-allowed}
 
 /* V11 menu loading */

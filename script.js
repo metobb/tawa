@@ -49,16 +49,20 @@ function getCalendarState(date, today) {
   const d = dateOnly(date);
   const t = dateOnly(today);
   const dayOfWeek = d.getDay();
+  const todayDayOfWeek = t.getDay();
 
   // Saturday and Sunday are always unavailable.
   if (dayOfWeek === 0 || dayOfWeek === 6) {
     return "gray";
   }
 
-  // On Friday, the complete following Monday-Friday is available.
-  if (t.getDay() === 5) {
+  // On Friday, Saturday, and Sunday, the complete following
+  // Monday-Friday is available.
+  if (todayDayOfWeek === 5 || todayDayOfWeek === 6 || todayDayOfWeek === 0) {
+    const daysUntilNextMonday = todayDayOfWeek === 5 ? 3 : todayDayOfWeek === 6 ? 2 : 1;
+
     const nextMonday = new Date(t);
-    nextMonday.setDate(t.getDate() + 3);
+    nextMonday.setDate(t.getDate() + daysUntilNextMonday);
 
     const nextFriday = new Date(nextMonday);
     nextFriday.setDate(nextMonday.getDate() + 4);
@@ -66,15 +70,17 @@ function getCalendarState(date, today) {
     if (d >= nextMonday && d <= nextFriday) {
       return "green";
     }
+
+    return "gray";
   }
 
-  // During the current week, future weekdays are available.
-  // Today and previous weekdays are red/inactive.
+  // Monday-Thursday: only future weekdays in the current week are available.
+  // Today, past days, weekends, and all other dates are gray/inactive.
   const currentMonday = mondayOfWeek(t);
   const dateMonday = mondayOfWeek(d);
 
-  if (dateMonday.getTime() === currentMonday.getTime()) {
-    return d > t ? "green" : "red";
+  if (dateMonday.getTime() === currentMonday.getTime() && d > t) {
+    return "green";
   }
 
   return "gray";
@@ -167,8 +173,6 @@ function renderCalendar() {
     if (state === "green") {
       button.classList.add("active-green");
       button.addEventListener("click", () => showOrderPage(dateString));
-    } else if (state === "red") {
-      button.classList.add("inactive-red");
     } else {
       button.classList.add("inactive-gray");
     }
