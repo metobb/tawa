@@ -20,6 +20,10 @@ const orderButton = document.getElementById("orderButton");
 const deliveryToggle = document.getElementById("deliveryToggle");
 const deliveryFields = document.getElementById("deliveryFields");
 const confirmationModal = document.getElementById("confirmationModal");
+const orderConfirmModal = document.getElementById("orderConfirmModal");
+const orderConfirmMessage = document.getElementById("orderConfirmMessage");
+const orderConfirmButton = document.getElementById("orderConfirmButton");
+const orderCancelButton = document.getElementById("orderCancelButton");
 const errorModal = document.getElementById("errorModal");
 const errorMessage = document.getElementById("errorMessage");
 const leaveModal = document.getElementById("leaveModal");
@@ -29,6 +33,7 @@ const leaveNoButton = document.getElementById("leaveNoButton");
 let selectedMenuDate = "";
 let currentMenus = [];
 let pendingLeavePage = "";
+let pendingOrderPayload = null;
 
 function dateOnly(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -241,7 +246,17 @@ function renderMenus() {
 
     const title = document.createElement("h2");
     title.className = "menu-title";
-    title.textContent = menu.menu;
+
+    const titleText = document.createElement("span");
+    titleText.className = "menu-title-text";
+    titleText.textContent = menu.menu;
+
+    const titlePrice = document.createElement("span");
+    titlePrice.className = "menu-title-price";
+    titlePrice.textContent = `${PRICE_PER_MENU.toFixed(2)} €`;
+
+    title.appendChild(titleText);
+    title.appendChild(titlePrice);
     card.appendChild(title);
 
     const mealsGrid = document.createElement("div");
@@ -313,13 +328,9 @@ function renderMenus() {
 
     select.addEventListener("change", updateTotal);
 
-    const price = document.createElement("div");
-    price.className = "menu-price";
-    price.textContent = `${PRICE_PER_MENU.toFixed(2)} €`;
-
-    // Order matters: selection first, price second.
+    // The price is displayed in the menu title, so there is no
+    // additional price box below the quantity selector.
     controls.appendChild(amountWrap);
-    controls.appendChild(price);
     card.appendChild(controls);
     menusContainer.appendChild(card);
   });
@@ -361,6 +372,69 @@ function updateTotal() {
   totalPrice.textContent = `${total.toFixed(2)} €`;
 }
 
+function buildOrderConfirmationMessage(selectedOrders) {
+  const lines = selectedOrders.map(item => {
+    const lineTotal = item.amount * PRICE_PER_MENU;
+    return `${item.menu}: ${item.amount} x ${PRICE_PER_MENU.toFixed(2)} € = ${lineTotal.toFixed(2)} €`;
+  });
+
+  const total = selectedOrders.reduce(
+    (sum, item) => sum + item.amount * PRICE_PER_MENU,
+    0
+  );
+
+  return `${lines.join("\n")}\n\nTotal: ${total.toFixed(2)} €\n\nAlles in Ordnung?`;
+}
+
+function showOrderConfirmation(payload) {
+  pendingOrderPayload = payload;
+  orderConfirmMessage.textContent = buildOrderConfirmationMessage(payload.orders);
+  orderConfirmModal.classList.remove("hidden");
+}
+
+function cancelOrderConfirmation() {
+  pendingOrderPayload = null;
+  orderConfirmModal.classList.add("hidden");
+}
+
+async function finalizeOrder() {
+  if (!pendingOrderPayload) return;
+
+  const payload = pendingOrderPayload;
+  orderConfirmButton.disabled = true;
+  orderCancelButton.disabled = true;
+  orderConfirmButton.textContent = "Wird gesendet…";
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+      },
+      body: new URLSearchParams({
+        action: "order",
+        payload: JSON.stringify(payload)
+      })
+    });
+
+    if (!response.ok) throw new Error(`Order request failed (${response.status})`);
+
+    const data = await response.json();
+    if (!data.ok) throw new Error(data.error || "Die Bestellung konnte nicht gespeichert werden.");
+
+    pendingOrderPayload = null;
+    orderConfirmModal.classList.add("hidden");
+    confirmationModal.classList.remove("hidden");
+  } catch (error) {
+    console.error(error);
+    showError("Die Bestellung konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.");
+  } finally {
+    orderConfirmButton.disabled = false;
+    orderCancelButton.disabled = false;
+    orderConfirmButton.textContent = "Bestellen";
+  }
+}
+
 async function submitOrder(event) {
   event.preventDefault();
 
@@ -386,34 +460,7 @@ async function submitOrder(event) {
     description: document.getElementById("description").value.trim()
   };
 
-  orderButton.disabled = true;
-  orderButton.textContent = "Wird gesendet…";
-
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
-      },
-      body: new URLSearchParams({
-        action: "order",
-        payload: JSON.stringify(payload)
-      })
-    });
-
-    if (!response.ok) throw new Error(`Order request failed (${response.status})`);
-
-    const data = await response.json();
-    if (!data.ok) throw new Error(data.error || "Die Bestellung konnte nicht gespeichert werden.");
-
-    confirmationModal.classList.remove("hidden");
-  } catch (error) {
-    console.error(error);
-    showError("Die Bestellung konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.");
-  } finally {
-    orderButton.disabled = false;
-    orderButton.textContent = "Bestellen";
-  }
+  showOrderConfirmation(payload);
 }
 
 function hasMenuSelections() {
@@ -478,12 +525,17 @@ function bindNavigationButtons() {
   if (leaveYesButton) leaveYesButton.addEventListener("click", confirmLeaveMenuPage);
   if (leaveNoButton) leaveNoButton.addEventListener("click", cancelLeaveMenuPage);
 
+  if (orderConfirmButton) orderConfirmButton.addEventListener("click", finalizeOrder);
+  if (orderCancelButton) orderCancelButton.addEventListener("click", cancelOrderConfirmation);
+
   document.getElementById("errorCloseButton").addEventListener("click", () => {
     errorModal.classList.add("hidden");
   });
 }
 
 function resetOrderPage() {
+  pendingOrderPayload = null;
+  if (orderConfirmModal) orderConfirmModal.classList.add("hidden");
   orderForm.reset();
   document.getElementById("zipcode").value = "20357";
   resetDeliveryDetails();
