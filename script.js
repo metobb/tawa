@@ -274,9 +274,9 @@ function renderMenus() {
     const controls = document.createElement("div");
     controls.className = "menu-controls";
 
-    // Quantity selector: the visible button uses the same chevron symbol
-    // as the "Bestellen" delivery-details button. The native select remains
-    // underneath so the existing quantity-selection logic is unchanged.
+    // Quantity selector is intentionally rendered above the price.
+    // The native select remains fully functional, while its visible UI is
+    // styled as the same black/white-chevron pattern used by "Bestellen".
     const amountWrap = document.createElement("div");
     amountWrap.className = "menu-amount-wrap";
 
@@ -287,7 +287,7 @@ function renderMenus() {
 
     const zero = document.createElement("option");
     zero.value = "0";
-    zero.textContent = "Anzahl";
+    zero.textContent = "0";
     select.appendChild(zero);
 
     for (let amount = 1; amount <= 10; amount++) {
@@ -297,17 +297,18 @@ function renderMenus() {
       select.appendChild(option);
     }
 
-    const amountLabel = document.createElement("span");
-    amountLabel.className = "menu-amount-label";
-    amountLabel.textContent = "Anzahl";
+    const amountText = document.createElement("span");
+    amountText.className = "menu-amount-text";
+    amountText.textContent = "Anzahl";
+    amountText.setAttribute("aria-hidden", "true");
 
     const amountChevron = document.createElement("span");
     amountChevron.className = "menu-amount-chevron";
-    amountChevron.setAttribute("aria-hidden", "true");
     amountChevron.textContent = "▼";
+    amountChevron.setAttribute("aria-hidden", "true");
 
     amountWrap.appendChild(select);
-    amountWrap.appendChild(amountLabel);
+    amountWrap.appendChild(amountText);
     amountWrap.appendChild(amountChevron);
 
     select.addEventListener("change", updateTotal);
@@ -316,8 +317,7 @@ function renderMenus() {
     price.className = "menu-price";
     price.textContent = `${PRICE_PER_MENU.toFixed(2)} €`;
 
-    // Selection button above the price box. The selector is twice as wide
-    // as the price box and both use the same height.
+    // Order matters: selection first, price second.
     controls.appendChild(amountWrap);
     controls.appendChild(price);
     card.appendChild(controls);

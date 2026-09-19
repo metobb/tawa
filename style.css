@@ -319,45 +319,49 @@ h1, h2 { margin-top: 0; }
   background: #fafafa;
 }
 
-/* Quantity selector: exactly twice the width of the price box. */
-.menu-amount-wrap,
-.menu-price {
-  width: min(240px, 100%);
-  height: 48px;
-  border-radius: 7px;
-}
-
+/* Quantity selector: 240px wide, price: 120px wide (2:1). */
 .menu-amount-wrap {
   position: relative;
-  border: 2px solid var(--blue);
-  background: var(--blue);
+  width: 240px;
+  max-width: 100%;
+  height: 48px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 9px;
+  background: var(--black);
   color: var(--white);
   overflow: hidden;
 }
 
-/* Keep the real select functional, but visually use our custom label/chevron. */
+/* The native select is invisible but covers the complete button, so the
+   existing quantity selection remains functional on desktop and mobile. */
 .menu-amount {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  margin: 0;
   opacity: 0;
   cursor: pointer;
-  z-index: 2;
+  z-index: 3;
 }
 
-.menu-amount-label {
+.menu-amount-text {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 44px 0 18px;
+  padding: 0 42px 0 16px;
+  box-sizing: border-box;
+  color: var(--white);
   font-size: 20px;
   font-weight: 700;
   pointer-events: none;
+  z-index: 1;
 }
 
+/* Same symbol used in the Bestellen accordion. */
 .menu-amount-chevron {
   position: absolute;
   right: 16px;
@@ -365,7 +369,9 @@ h1, h2 { margin-top: 0; }
   transform: translateY(-50%);
   color: var(--white);
   font-size: 16px;
+  line-height: 1;
   pointer-events: none;
+  z-index: 1;
 }
 
 .menu-amount option {
@@ -375,7 +381,8 @@ h1, h2 { margin-top: 0; }
 
 .menu-price {
   width: 120px;
-  min-height: 48px;
+  height: 48px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
