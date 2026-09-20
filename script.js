@@ -25,6 +25,7 @@ const orderConfirmMessage = document.getElementById("orderConfirmMessage");
 const orderConfirmButton = document.getElementById("orderConfirmButton");
 const orderCancelButton = document.getElementById("orderCancelButton");
 const errorModal = document.getElementById("errorModal");
+const errorTitle = document.getElementById("errorTitle");
 const errorMessage = document.getElementById("errorMessage");
 const leaveModal = document.getElementById("leaveModal");
 const leaveYesButton = document.getElementById("leaveYesButton");
@@ -326,11 +327,25 @@ function renderMenus() {
     amountWrap.appendChild(amountText);
     amountWrap.appendChild(amountChevron);
 
-    select.addEventListener("change", updateTotal);
+    const amountValue = document.createElement("div");
+    amountValue.className = "menu-amount-value";
+    amountValue.textContent = "0";
+    amountValue.setAttribute("aria-live", "polite");
+    amountValue.setAttribute("aria-label", `Ausgewählte Anzahl für ${menu.menu}`);
+
+    const amountControlRow = document.createElement("div");
+    amountControlRow.className = "menu-amount-control-row";
+    amountControlRow.appendChild(amountWrap);
+    amountControlRow.appendChild(amountValue);
+
+    select.addEventListener("change", () => {
+      amountValue.textContent = select.value;
+      updateTotal();
+    });
 
     // The price is displayed in the menu title, so there is no
     // additional price box below the quantity selector.
-    controls.appendChild(amountWrap);
+    controls.appendChild(amountControlRow);
     card.appendChild(controls);
     menusContainer.appendChild(card);
   });
@@ -440,7 +455,11 @@ async function submitOrder(event) {
 
   const selectedOrders = getSelectedOrders();
   if (selectedOrders.length === 0) {
-    showError("Bitte wählen Sie mindestens ein Menü aus.");
+    showError(
+      "Bitte wählen Sie mindestens ein Menü aus.",
+      "Kein Menü???",
+      true
+    );
     return;
   }
 
@@ -530,6 +549,8 @@ function bindNavigationButtons() {
 
   document.getElementById("errorCloseButton").addEventListener("click", () => {
     errorModal.classList.add("hidden");
+    errorTitle.textContent = "Es ist ein Fehler aufgetreten";
+    errorMessage.classList.remove("large-error-text");
   });
 }
 
@@ -547,8 +568,10 @@ function resetOrderPage() {
   updateTotal();
 }
 
-function showError(message) {
+function showError(message, title = "Es ist ein Fehler aufgetreten", largeText = false) {
+  errorTitle.textContent = title;
   errorMessage.textContent = message;
+  errorMessage.classList.toggle("large-error-text", largeText);
   errorModal.classList.remove("hidden");
 }
 
