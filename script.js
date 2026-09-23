@@ -152,6 +152,42 @@ async function fetchMenusForDate(dateString) {
   }
 }
 
+function createPreviewImage(meal, menu) {
+  const images = document.createElement("div");
+  images.className = "start-preview-images single-image";
+
+  if (meal && meal.picture) {
+    const img = document.createElement("img");
+    img.className = "start-preview-image";
+    img.alt = meal.meal || menu.menu;
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.fetchPriority = "low";
+    img.width = 170;
+    img.height = 120;
+
+    const originalUrl = meal.picture;
+    img.src = createPreviewImageUrl(originalUrl);
+
+    img.onerror = () => {
+      if (img.src !== originalUrl) {
+        img.src = originalUrl;
+      } else {
+        img.style.display = "none";
+      }
+    };
+
+    images.appendChild(img);
+  } else {
+    const placeholder = document.createElement("div");
+    placeholder.className = "start-preview-image";
+    placeholder.setAttribute("aria-hidden", "true");
+    images.appendChild(placeholder);
+  }
+
+  return images;
+}
+
 function buildStartPreviewCard(date, menus = null, loading = false) {
   const dateString = displayDate(date);
 
@@ -191,39 +227,8 @@ function buildStartPreviewCard(date, menus = null, loading = false) {
     menuName.textContent = menu.menu;
     menuSection.appendChild(menuName);
 
-    const images = document.createElement("div");
-    images.className = "start-preview-images single-image";
-
     const meal = (menu.meals || []).find(item => item.picture);
-
-    if (meal && meal.picture) {
-      const img = document.createElement("img");
-      img.className = "start-preview-image";
-      img.alt = meal.meal || menu.menu;
-      img.loading = "lazy";
-      img.decoding = "async";
-      img.fetchPriority = "low";
-      img.width = 170;
-      img.height = 120;
-
-      const originalUrl = meal.picture;
-      img.src = createPreviewImageUrl(originalUrl);
-
-      img.onerror = () => {
-        if (img.src !== originalUrl) {
-          img.src = originalUrl;
-        } else {
-          img.style.display = "none";
-        }
-      };
-
-      images.appendChild(img);
-    } else {
-      const placeholder = document.createElement("div");
-      placeholder.className = "start-preview-image";
-      placeholder.setAttribute("aria-hidden", "true");
-      images.appendChild(placeholder);
-    }
+    const images = createPreviewImage(meal, menu);
 
     menuSection.appendChild(images);
     menusRow.appendChild(menuSection);
