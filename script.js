@@ -176,25 +176,42 @@ function buildStartPreviewCard(date, menus) {
     menuSection.appendChild(menuName);
 
     const images = document.createElement("div");
-    images.className = "start-preview-images";
+    images.className = "start-preview-images single-image";
 
-    const mealsWithPictures = (menu.meals || []).filter(meal => meal.picture).slice(0, 2);
-    if (mealsWithPictures.length === 1) {
-      images.classList.add("single-image");
-    }
+    // Only one representative image per menu is loaded on the start page.
+    // The full-size image is still used on the menu page.
+    const meal = (menu.meals || []).find(item => item.picture);
 
-    mealsWithPictures.forEach(meal => {
+    if (meal && meal.picture) {
       const img = document.createElement("img");
       img.className = "start-preview-image";
-      img.src = meal.picture;
       img.alt = meal.meal || menu.menu;
       img.loading = "lazy";
       img.decoding = "async";
+      img.fetchPriority = "low";
+      img.width = 170;
+      img.height = 120;
+
+      // Drive/Google image URLs often support size hints. Keep the original
+      // URL as fallback so existing image handling remains compatible.
+      const originalUrl = meal.picture;
+      img.src = createPreviewImageUrl(originalUrl);
+
       img.onerror = () => {
-        img.style.display = "none";
+        if (img.src !== originalUrl) {
+          img.src = originalUrl;
+        } else {
+          img.style.display = "none";
+        }
       };
+
       images.appendChild(img);
-    });
+    } else {
+      const placeholder = document.createElement("div");
+      placeholder.className = "start-preview-image";
+      placeholder.setAttribute("aria-hidden", "true");
+      images.appendChild(placeholder);
+    }
 
     menuSection.appendChild(images);
     card.appendChild(menuSection);
@@ -212,6 +229,24 @@ function buildStartPreviewCard(date, menus) {
   return card;
 }
 
+function createPreviewImageUrl(url) {
+  if (!url) return url;
+
+  // Google Drive thumbnail endpoint:
+  // https://drive.google.com/thumbnail?id=FILE_ID&sz=w320
+  const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/i);
+  if (driveMatch) {
+    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(driveMatch[1])}&sz=w320`;
+  }
+
+  const idMatch = url.match(/[?&]id=([^&]+)/i);
+  if (url.includes("drive.google.com") && idMatch) {
+    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(idMatch[1])}&sz=w320`;
+  }
+
+  return url;
+}
+
 async function renderStartMenuPreviews() {
   if (!startMenuPreviews || !startPreviewLoading) return;
 
@@ -227,28 +262,32 @@ async function renderStartMenuPreviews() {
     return;
   }
 
+  // Do not block the start page on all images. The cards are created as soon
+  // as each date's small menu JSON is available; images are lazy-loaded.
   startPreviewLoading.hidden = false;
 
-  const results = await Promise.all(
+  let renderedCount = 0;
+
+  await Promise.all(
     activeDates.map(async date => {
       const dateString = displayDate(date);
+
       try {
         const menus = await fetchMenusForDate(dateString);
-        return { date, menus, ok: menus.length > 0 };
+
+        if (menus.length > 0) {
+          startMenuPreviews.appendChild(buildStartPreviewCard(date, menus));
+          renderedCount += 1;
+          startPreviewLoading.textContent =
+            renderedCount === activeDates.length
+              ? ""
+              : "Menüs werden geladen...";
+        }
       } catch (error) {
         console.error(`Preview loading failed for ${dateString}:`, error);
-        return { date, menus: [], ok: false };
       }
     })
   );
-
-  startMenuPreviews.innerHTML = "";
-
-  results
-    .filter(result => result.ok)
-    .forEach(result => {
-      startMenuPreviews.appendChild(buildStartPreviewCard(result.date, result.menus));
-    });
 
   startPreviewLoading.hidden = true;
 
