@@ -193,6 +193,7 @@ button, input, select, textarea { font: inherit; }
 
 .start-preview-card.is-loading {
   cursor: default;
+  min-height: 180px;
 }
 
 .start-preview-card.is-loading:hover,
@@ -767,6 +768,9 @@ h1, h2 { margin-top: 0; }
     width: 100%;
     min-width: 0;
     min-height: 0;
+  }
+  .start-preview-card.is-loading {
+    min-height: 155px;
   }
   .start-preview-image {
     height: 92px;
