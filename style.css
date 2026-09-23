@@ -59,9 +59,9 @@ button, input, select, textarea { font: inherit; }
 }
 
 .start-motto {
-  width: min(100%, 460px);
+  width: min(100%, 760px);
   box-sizing: border-box;
-  margin: 22px auto 28px;
+  margin: 10px auto 30px;
   padding: 0;
   color: var(--fandango);
   text-align: center;
