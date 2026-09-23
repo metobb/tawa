@@ -14,13 +14,30 @@
 
     <!-- New start page -->
     <section id="startPage" class="page start-page">
-      <div class="meal-type-buttons" aria-label="Essensauswahl">
-        <button id="lunchButton" class="meal-type-button inactive" type="button" disabled>
-          Mittagsessen
-        </button>
-        <button id="dinnerButton" class="meal-type-button active" type="button">
-          Abendessen
-        </button>
+      <div class="start-page-content">
+        <p class="start-motto">LOKAL · FRISCH GEKOCHT · MIT LIEBE SERVIERT</p>
+
+        <div class="meal-type-buttons" aria-label="Essensauswahl">
+          <button id="lunchButton" class="meal-type-button inactive" type="button" disabled>
+            Mittagsessen
+          </button>
+          <button id="dinnerButton" class="meal-type-button active" type="button">
+            Abendessen
+          </button>
+
+          <div class="delivery-notice" aria-label="Lieferzeit">
+            <span class="delivery-signal" aria-hidden="true"></span>
+            <span>Lieferung Täglich 18:30-19:00</span>
+          </div>
+        </div>
+
+        <section class="start-preview-section" aria-labelledby="startPreviewTitle">
+          <h2 id="startPreviewTitle" class="start-preview-title">Aktuelle Menüs</h2>
+          <div id="startPreviewLoading" class="start-preview-loading" aria-live="polite">
+            Menüs werden geladen...
+          </div>
+          <div id="startMenuPreviews" class="start-menu-previews" aria-live="polite"></div>
+        </section>
       </div>
     </section>
 

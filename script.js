@@ -30,11 +30,14 @@ const errorMessage = document.getElementById("errorMessage");
 const leaveModal = document.getElementById("leaveModal");
 const leaveYesButton = document.getElementById("leaveYesButton");
 const leaveNoButton = document.getElementById("leaveNoButton");
+const startMenuPreviews = document.getElementById("startMenuPreviews");
+const startPreviewLoading = document.getElementById("startPreviewLoading");
 
 let selectedMenuDate = "";
 let currentMenus = [];
 let pendingLeavePage = "";
 let pendingOrderPayload = null;
+const startPreviewCache = new Map();
 
 function dateOnly(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -92,6 +95,171 @@ function getCalendarState(date, today) {
   return "gray";
 }
 
+function getActiveCalendarDates(today = new Date()) {
+  const t = dateOnly(today);
+  const year = t.getFullYear();
+  const month = t.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const activeDates = [];
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    if (getCalendarState(date, t) === "green") {
+      activeDates.push(date);
+    }
+  }
+
+  return activeDates;
+}
+
+function germanDayTitle(date) {
+  const weekday = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(date);
+  return `${weekday}, ${displayDate(date)}`;
+}
+
+async function fetchMenusForDate(dateString) {
+  if (startPreviewCache.has(dateString)) {
+    return startPreviewCache.get(dateString);
+  }
+
+  const request = (async () => {
+    const url = `${API_URL}?action=menus&date=${encodeURIComponent(dateString)}`;
+    const response = await fetch(url, {
+      method: "GET",
+      mode: "cors",
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(`Menu request failed (${response.status})`);
+    }
+
+    const data = await response.json();
+    if (!data.ok) {
+      throw new Error(data.error || "Menüs wurden nicht geladen.");
+    }
+
+    return Array.isArray(data.menus) ? data.menus : [];
+  })();
+
+  startPreviewCache.set(dateString, request);
+
+  try {
+    return await request;
+  } catch (error) {
+    startPreviewCache.delete(dateString);
+    throw error;
+  }
+}
+
+function buildStartPreviewCard(date, menus) {
+  const dateString = displayDate(date);
+
+  const card = document.createElement("article");
+  card.className = "start-preview-card";
+  card.tabIndex = 0;
+  card.setAttribute("role", "button");
+  card.setAttribute("aria-label", `Menüs für ${germanDayTitle(date)} öffnen`);
+
+  const dayTitle = document.createElement("h3");
+  dayTitle.className = "start-preview-day";
+  dayTitle.textContent = germanDayTitle(date);
+  card.appendChild(dayTitle);
+
+  menus.slice(0, 2).forEach(menu => {
+    const menuSection = document.createElement("div");
+    menuSection.className = "start-preview-menu";
+
+    const menuName = document.createElement("h4");
+    menuName.className = "start-preview-menu-name";
+    menuName.textContent = menu.menu;
+    menuSection.appendChild(menuName);
+
+    const images = document.createElement("div");
+    images.className = "start-preview-images";
+
+    const mealsWithPictures = (menu.meals || []).filter(meal => meal.picture).slice(0, 2);
+    if (mealsWithPictures.length === 1) {
+      images.classList.add("single-image");
+    }
+
+    mealsWithPictures.forEach(meal => {
+      const img = document.createElement("img");
+      img.className = "start-preview-image";
+      img.src = meal.picture;
+      img.alt = meal.meal || menu.menu;
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.onerror = () => {
+        img.style.display = "none";
+      };
+      images.appendChild(img);
+    });
+
+    menuSection.appendChild(images);
+    card.appendChild(menuSection);
+  });
+
+  const openDate = () => showOrderPage(dateString);
+  card.addEventListener("click", openDate);
+  card.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openDate();
+    }
+  });
+
+  return card;
+}
+
+async function renderStartMenuPreviews() {
+  if (!startMenuPreviews || !startPreviewLoading) return;
+
+  const activeDates = getActiveCalendarDates(new Date());
+  startMenuPreviews.innerHTML = "";
+
+  if (activeDates.length === 0) {
+    startPreviewLoading.hidden = true;
+    const empty = document.createElement("div");
+    empty.className = "start-preview-empty";
+    empty.textContent = "Aktuell sind keine Menüs zur Vorschau verfügbar.";
+    startMenuPreviews.appendChild(empty);
+    return;
+  }
+
+  startPreviewLoading.hidden = false;
+
+  const results = await Promise.all(
+    activeDates.map(async date => {
+      const dateString = displayDate(date);
+      try {
+        const menus = await fetchMenusForDate(dateString);
+        return { date, menus, ok: menus.length > 0 };
+      } catch (error) {
+        console.error(`Preview loading failed for ${dateString}:`, error);
+        return { date, menus: [], ok: false };
+      }
+    })
+  );
+
+  startMenuPreviews.innerHTML = "";
+
+  results
+    .filter(result => result.ok)
+    .forEach(result => {
+      startMenuPreviews.appendChild(buildStartPreviewCard(result.date, result.menus));
+    });
+
+  startPreviewLoading.hidden = true;
+
+  if (!startMenuPreviews.children.length) {
+    const empty = document.createElement("div");
+    empty.className = "start-preview-empty";
+    empty.textContent = "Die Menüvorschau konnte gerade nicht geladen werden.";
+    startMenuPreviews.appendChild(empty);
+  }
+}
+
 function showPage(pageId) {
   ["startPage", "calendarPage", "menuPage"].forEach(id => {
     const page = document.getElementById(id);
@@ -112,6 +280,7 @@ function showStartPage() {
   leaveModal.classList.add("hidden");
   resetOrderPage();
   showPage("startPage");
+  renderStartMenuPreviews();
 }
 
 function showCalendarPage() {
