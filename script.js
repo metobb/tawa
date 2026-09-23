@@ -166,6 +166,9 @@ function buildStartPreviewCard(date, menus) {
   dayTitle.textContent = germanDayTitle(date);
   card.appendChild(dayTitle);
 
+  const menusRow = document.createElement("div");
+  menusRow.className = "start-preview-menus-row";
+
   menus.slice(0, 2).forEach(menu => {
     const menuSection = document.createElement("div");
     menuSection.className = "start-preview-menu";
@@ -214,8 +217,10 @@ function buildStartPreviewCard(date, menus) {
     }
 
     menuSection.appendChild(images);
-    card.appendChild(menuSection);
+    menusRow.appendChild(menuSection);
   });
+
+  card.appendChild(menusRow);
 
   const openDate = () => showOrderPage(dateString);
   card.addEventListener("click", openDate);
