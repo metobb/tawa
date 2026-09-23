@@ -171,6 +171,7 @@ button, input, select, textarea { font: inherit; }
 .start-preview-card {
   width: 100%;
   min-width: 0;
+  min-height: 285px;
   box-sizing: border-box;
   border: 1px solid #d1d1d1;
   border-radius: 12px;
@@ -179,6 +180,7 @@ button, input, select, textarea { font: inherit; }
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
 }
 
 .start-preview-card:hover,
@@ -186,6 +188,46 @@ button, input, select, textarea { font: inherit; }
   transform: translateY(-2px);
   box-shadow: 0 7px 18px rgba(0, 0, 0, 0.13);
   outline: none;
+}
+
+
+.start-preview-card.is-loading {
+  cursor: default;
+}
+
+.start-preview-card.is-loading:hover,
+.start-preview-card.is-loading:focus-visible {
+  transform: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.start-preview-card-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+}
+
+.start-preview-spinner {
+  width: 38px;
+  height: 38px;
+  box-sizing: border-box;
+  border: 4px solid #e1e1e1;
+  border-top-color: var(--fandango);
+  border-radius: 50%;
+  animation: start-preview-spin 0.85s linear infinite;
+}
+
+@keyframes start-preview-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.start-preview-card-content {
+  width: 100%;
 }
 
 .start-preview-day {
@@ -724,6 +766,7 @@ h1, h2 { margin-top: 0; }
   .start-preview-card {
     width: 100%;
     min-width: 0;
+    min-height: 235px;
   }
   .start-preview-image {
     height: 92px;

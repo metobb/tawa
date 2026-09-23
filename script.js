@@ -152,14 +152,27 @@ async function fetchMenusForDate(dateString) {
   }
 }
 
-function buildStartPreviewCard(date, menus) {
+function buildStartPreviewCard(date, menus = null, loading = false) {
   const dateString = displayDate(date);
 
   const card = document.createElement("article");
   card.className = "start-preview-card";
-  card.tabIndex = 0;
+  card.dataset.date = dateString;
+  card.tabIndex = loading ? -1 : 0;
   card.setAttribute("role", "button");
   card.setAttribute("aria-label", `Menüs für ${germanDayTitle(date)} öffnen`);
+
+  if (loading) {
+    card.classList.add("is-loading");
+    card.removeAttribute("role");
+
+    const loadingArea = document.createElement("div");
+    loadingArea.className = "start-preview-card-loading";
+    loadingArea.setAttribute("aria-label", `Menüs für ${germanDayTitle(date)} werden geladen`);
+    loadingArea.innerHTML = '<span class="start-preview-spinner" aria-hidden="true"></span>';
+    card.appendChild(loadingArea);
+    return card;
+  }
 
   const dayTitle = document.createElement("h3");
   dayTitle.className = "start-preview-day";
@@ -181,8 +194,6 @@ function buildStartPreviewCard(date, menus) {
     const images = document.createElement("div");
     images.className = "start-preview-images single-image";
 
-    // Only one representative image per menu is loaded on the start page.
-    // The full-size image is still used on the menu page.
     const meal = (menu.meals || []).find(item => item.picture);
 
     if (meal && meal.picture) {
@@ -195,8 +206,6 @@ function buildStartPreviewCard(date, menus) {
       img.width = 170;
       img.height = 120;
 
-      // Drive/Google image URLs often support size hints. Keep the original
-      // URL as fallback so existing image handling remains compatible.
       const originalUrl = meal.picture;
       img.src = createPreviewImageUrl(originalUrl);
 
@@ -256,10 +265,11 @@ async function renderStartMenuPreviews() {
   if (!startMenuPreviews || !startPreviewLoading) return;
 
   const activeDates = getActiveCalendarDates(new Date());
+
   startMenuPreviews.innerHTML = "";
+  startPreviewLoading.hidden = true;
 
   if (activeDates.length === 0) {
-    startPreviewLoading.hidden = true;
     const empty = document.createElement("div");
     empty.className = "start-preview-empty";
     empty.textContent = "Aktuell sind keine Menüs zur Vorschau verfügbar.";
@@ -267,41 +277,47 @@ async function renderStartMenuPreviews() {
     return;
   }
 
-  // Do not block the start page on all images. The cards are created as soon
-  // as each date's small menu JSON is available; images are lazy-loaded.
-  startPreviewLoading.hidden = false;
+  // Create every active-day window first, in chronological order.
+  // Each window has its own spinner while its date-specific data is loading.
+  const cards = activeDates.map(date => {
+    const card = buildStartPreviewCard(date, null, true);
+    startMenuPreviews.appendChild(card);
+    return { date, card };
+  });
 
-  let renderedCount = 0;
-
+  // Load each date independently. The position of the cards never changes,
+  // so 24.09 always remains above 25.09, etc.
   await Promise.all(
-    activeDates.map(async date => {
+    cards.map(async ({ date, card }) => {
       const dateString = displayDate(date);
 
       try {
         const menus = await fetchMenusForDate(dateString);
 
-        if (menus.length > 0) {
-          startMenuPreviews.appendChild(buildStartPreviewCard(date, menus));
-          renderedCount += 1;
-          startPreviewLoading.textContent =
-            renderedCount === activeDates.length
-              ? ""
-              : "Menüs werden geladen...";
-        }
+        const loadedCard = buildStartPreviewCard(date, menus, false);
+        card.replaceWith(loadedCard);
       } catch (error) {
         console.error(`Preview loading failed for ${dateString}:`, error);
+
+        // Keep the same date window and replace the spinner with a simple
+        // loading/error hint instead of removing the window.
+        card.classList.remove("is-loading");
+        card.tabIndex = -1;
+        card.removeAttribute("role");
+        card.innerHTML = "";
+
+        const dayTitle = document.createElement("h3");
+        dayTitle.className = "start-preview-day";
+        dayTitle.textContent = germanDayTitle(date);
+        card.appendChild(dayTitle);
+
+        const message = document.createElement("div");
+        message.className = "start-preview-empty";
+        message.textContent = "Menüs konnten nicht geladen werden.";
+        card.appendChild(message);
       }
     })
   );
-
-  startPreviewLoading.hidden = true;
-
-  if (!startMenuPreviews.children.length) {
-    const empty = document.createElement("div");
-    empty.className = "start-preview-empty";
-    empty.textContent = "Die Menüvorschau konnte gerade nicht geladen werden.";
-    startMenuPreviews.appendChild(empty);
-  }
 }
 
 function showPage(pageId) {
