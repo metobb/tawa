@@ -379,6 +379,7 @@ function renderCalendar() {
   const year = calendarDate.getFullYear();
   const month = calendarDate.getMonth();
 
+  // Show the current calendar month and year.
   const monthTitle = document.createElement("div");
   monthTitle.className = "calendar-month-title";
   monthTitle.textContent = new Intl.DateTimeFormat("de-DE", {
@@ -390,21 +391,25 @@ function renderCalendar() {
   const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
   const weekdayRow = document.createElement("div");
   weekdayRow.className = "calendar-weekdays";
-  weekdays.forEach(day => {
+
+  weekdays.forEach(dayName => {
     const weekday = document.createElement("div");
     weekday.className = "calendar-weekday";
-    weekday.textContent = day;
+    weekday.textContent = dayName;
     weekdayRow.appendChild(weekday);
   });
+
   calendar.appendChild(weekdayRow);
 
   const grid = document.createElement("div");
   grid.className = "calendar-grid";
 
+  // Monday of the week containing the first day of the month.
   const firstOfMonth = new Date(year, month, 1);
   const firstDayOffset = (firstOfMonth.getDay() + 6) % 7;
   const gridStart = new Date(year, month, 1 - firstDayOffset);
 
+  // Sunday of the week containing the last day of the month.
   const lastOfMonth = new Date(year, month + 1, 0);
   const lastDayOffset = 6 - ((lastOfMonth.getDay() + 6) % 7);
   const gridEnd = new Date(year, month, lastOfMonth.getDate() + lastDayOffset);
@@ -418,18 +423,23 @@ function renderCalendar() {
     cell.className = "calendar-day";
     cell.textContent = String(cellDate.getDate());
 
+    // Use the existing active/inactive formulation for every displayed date,
+    // including dates belonging to adjacent months.
     const state = getCalendarState(cellDate, today);
     cell.classList.add(`calendar-day-${state}`);
 
     if (cellDate.getMonth() !== month) {
       cell.classList.add("calendar-day-adjacent-month");
     }
+
     if (cellDate.getTime() === today.getTime()) {
       cell.classList.add("calendar-day-today");
     }
 
     if (state === "green") {
-      cell.addEventListener("click", () => showOrderPage(displayDate(cellDate)));
+      cell.addEventListener("click", () => {
+        showOrderPage(displayDate(cellDate));
+      });
     } else {
       cell.disabled = true;
     }
