@@ -35,6 +35,10 @@ const startPreviewLoading = document.getElementById("startPreviewLoading");
 
 let selectedMenuDate = "";
 let currentMenus = [];
+
+// The calendar starts on the current local month. Keep this separate from
+// today so the renderer has a stable month reference.
+let calendarDate = dateOnly(new Date());
 let pendingLeavePage = "";
 let pendingOrderPayload = null;
 const startPreviewCache = new Map();
@@ -426,7 +430,14 @@ function renderCalendar() {
     // Use the existing active/inactive formulation for every displayed date,
     // including dates belonging to adjacent months.
     const state = getCalendarState(cellDate, today);
-    cell.classList.add(`calendar-day-${state}`);
+
+    // Use the existing calendar CSS states so the generated cells receive
+    // the intended green/gray/today styling.
+    if (state === "green") {
+      cell.classList.add("active");
+    } else if (state === "gray") {
+      cell.classList.add("inactive");
+    }
 
     if (cellDate.getMonth() !== month) {
       cell.classList.add("calendar-day-adjacent-month");
