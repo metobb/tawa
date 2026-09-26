@@ -376,50 +376,71 @@ function renderCalendar() {
   calendar.innerHTML = "";
 
   const today = dateOnly(new Date());
-  const year = today.getFullYear();
-  const month = today.getMonth();
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
 
-  ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].forEach(day => {
-    const el = document.createElement("div");
-    el.className = "calendar-weekday";
-    el.textContent = day;
-    calendar.appendChild(el);
+  const monthTitle = document.createElement("div");
+  monthTitle.className = "calendar-month-title";
+  monthTitle.textContent = new Intl.DateTimeFormat("de-DE", {
+    month: "long",
+    year: "numeric"
+  }).format(calendarDate);
+  calendar.appendChild(monthTitle);
+
+  const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+  const weekdayRow = document.createElement("div");
+  weekdayRow.className = "calendar-weekdays";
+  weekdays.forEach(day => {
+    const weekday = document.createElement("div");
+    weekday.className = "calendar-weekday";
+    weekday.textContent = day;
+    weekdayRow.appendChild(weekday);
   });
+  calendar.appendChild(weekdayRow);
 
-  const firstDay = new Date(year, month, 1);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const mondayOffset = (firstDay.getDay() + 6) % 7;
+  const grid = document.createElement("div");
+  grid.className = "calendar-grid";
 
-  for (let i = 0; i < mondayOffset; i++) {
-    const empty = document.createElement("div");
-    empty.className = "calendar-day empty";
-    calendar.appendChild(empty);
-  }
+  const firstOfMonth = new Date(year, month, 1);
+  const firstDayOffset = (firstOfMonth.getDay() + 6) % 7;
+  const gridStart = new Date(year, month, 1 - firstDayOffset);
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    const state = getCalendarState(date, today);
-    const dateString = displayDate(date);
+  const lastOfMonth = new Date(year, month + 1, 0);
+  const lastDayOffset = 6 - ((lastOfMonth.getDay() + 6) % 7);
+  const gridEnd = new Date(year, month, lastOfMonth.getDate() + lastDayOffset);
 
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "calendar-day";
-    button.textContent = day;
-    button.dataset.date = dateString;
-    button.dataset.dateIso = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    button.disabled = state !== "green";
-    button.setAttribute("aria-disabled", state === "green" ? "false" : "true");
+  const current = new Date(gridStart);
 
-    if (state === "green") {
-      button.classList.add("active-green");
-      button.addEventListener("click", () => showOrderPage(dateString));
-    } else {
-      button.classList.add("inactive-gray");
+  while (current <= gridEnd) {
+    const cellDate = dateOnly(current);
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "calendar-day";
+    cell.textContent = String(cellDate.getDate());
+
+    const state = getCalendarState(cellDate, today);
+    cell.classList.add(`calendar-day-${state}`);
+
+    if (cellDate.getMonth() !== month) {
+      cell.classList.add("calendar-day-adjacent-month");
+    }
+    if (cellDate.getTime() === today.getTime()) {
+      cell.classList.add("calendar-day-today");
     }
 
-    calendar.appendChild(button);
+    if (state === "green") {
+      cell.addEventListener("click", () => showOrderPage(displayDate(cellDate)));
+    } else {
+      cell.disabled = true;
+    }
+
+    grid.appendChild(cell);
+    current.setDate(current.getDate() + 1);
   }
+
+  calendar.appendChild(grid);
 }
+
 
 function prepareMenuLoadingState() {
   menusContainer.innerHTML = "";

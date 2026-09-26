@@ -1021,3 +1021,18 @@ h1, h2 { margin-top: 0; }
   font-size: 1.2em;
   line-height: 1.5;
 }
+
+/* Calendar month heading and adjacent-month dates */
+.calendar-month-title {
+  margin: 0 0 14px;
+  color: var(--black);
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.calendar-day-adjacent-month {
+  opacity: 0.72;
+}
+
