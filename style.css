@@ -327,20 +327,10 @@ h1, h2 { margin-top: 0; }
 }
 
 .calendar {
-  display: block;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
   margin-top: 20px;
-}
-
-.calendar-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
 }
 
 .calendar-weekday {
@@ -358,19 +348,16 @@ h1, h2 { margin-top: 0; }
   cursor: not-allowed;
 }
 
-.calendar-day.active,
-.calendar-day.active:disabled {
-  color: #fff;
-  border-color: #2f9e44;
-  background: #2f9e44;
+.calendar-day.active {
+  color: var(--green);
+  border-color: var(--green);
+  background: #f3fff4;
   cursor: pointer;
   font-weight: 700;
-  opacity: 1;
-  pointer-events: auto;
 }
 
 .calendar-day.active:hover {
-  background: #267d36;
+  background: #e7f8e9;
 }
 
 .calendar-day.past,
@@ -1034,18 +1021,3 @@ h1, h2 { margin-top: 0; }
   font-size: 1.2em;
   line-height: 1.5;
 }
-
-/* Calendar month heading and adjacent-month dates */
-.calendar-month-title {
-  margin: 0 0 14px;
-  color: var(--black);
-  text-align: center;
-  font-size: 22px;
-  font-weight: 700;
-  text-transform: capitalize;
-}
-
-.calendar-day-adjacent-month {
-  opacity: 0.72;
-}
-

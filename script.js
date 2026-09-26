@@ -35,10 +35,6 @@ const startPreviewLoading = document.getElementById("startPreviewLoading");
 
 let selectedMenuDate = "";
 let currentMenus = [];
-
-// The calendar starts on the current local month. Keep this separate from
-// today so the renderer has a stable month reference.
-let calendarDate = dateOnly(new Date());
 let pendingLeavePage = "";
 let pendingOrderPayload = null;
 const startPreviewCache = new Map();
@@ -380,88 +376,50 @@ function renderCalendar() {
   calendar.innerHTML = "";
 
   const today = dateOnly(new Date());
-  const year = calendarDate.getFullYear();
-  const month = calendarDate.getMonth();
+  const year = today.getFullYear();
+  const month = today.getMonth();
 
-  // Show the current calendar month and year.
-  const monthTitle = document.createElement("div");
-  monthTitle.className = "calendar-month-title";
-  monthTitle.textContent = new Intl.DateTimeFormat("de-DE", {
-    month: "long",
-    year: "numeric"
-  }).format(calendarDate);
-  calendar.appendChild(monthTitle);
-
-  const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-  const weekdayRow = document.createElement("div");
-  weekdayRow.className = "calendar-weekdays";
-
-  weekdays.forEach(dayName => {
-    const weekday = document.createElement("div");
-    weekday.className = "calendar-weekday";
-    weekday.textContent = dayName;
-    weekdayRow.appendChild(weekday);
+  ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].forEach(day => {
+    const el = document.createElement("div");
+    el.className = "calendar-weekday";
+    el.textContent = day;
+    calendar.appendChild(el);
   });
 
-  calendar.appendChild(weekdayRow);
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const mondayOffset = (firstDay.getDay() + 6) % 7;
 
-  const grid = document.createElement("div");
-  grid.className = "calendar-grid";
-
-  // Monday of the week containing the first day of the month.
-  const firstOfMonth = new Date(year, month, 1);
-  const firstDayOffset = (firstOfMonth.getDay() + 6) % 7;
-  const gridStart = new Date(year, month, 1 - firstDayOffset);
-
-  // Sunday of the week containing the last day of the month.
-  const lastOfMonth = new Date(year, month + 1, 0);
-  const lastDayOffset = 6 - ((lastOfMonth.getDay() + 6) % 7);
-  const gridEnd = new Date(year, month, lastOfMonth.getDate() + lastDayOffset);
-
-  const current = new Date(gridStart);
-
-  while (current <= gridEnd) {
-    const cellDate = dateOnly(current);
-    const cell = document.createElement("button");
-    cell.type = "button";
-    cell.className = "calendar-day";
-    cell.textContent = String(cellDate.getDate());
-
-    // Use the existing active/inactive formulation for every displayed date,
-    // including dates belonging to adjacent months.
-    const state = getCalendarState(cellDate, today);
-
-    // Use the existing calendar CSS states so the generated cells receive
-    // the intended green/gray/today styling.
-    if (state === "green") {
-      cell.classList.add("active");
-    } else if (state === "gray") {
-      cell.classList.add("inactive");
-    }
-
-    if (cellDate.getMonth() !== month) {
-      cell.classList.add("calendar-day-adjacent-month");
-    }
-
-    if (cellDate.getTime() === today.getTime()) {
-      cell.classList.add("calendar-day-today");
-    }
-
-    if (state === "green") {
-      cell.addEventListener("click", () => {
-        showOrderPage(displayDate(cellDate));
-      });
-    } else {
-      cell.disabled = true;
-    }
-
-    grid.appendChild(cell);
-    current.setDate(current.getDate() + 1);
+  for (let i = 0; i < mondayOffset; i++) {
+    const empty = document.createElement("div");
+    empty.className = "calendar-day empty";
+    calendar.appendChild(empty);
   }
 
-  calendar.appendChild(grid);
-}
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const state = getCalendarState(date, today);
+    const dateString = displayDate(date);
 
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "calendar-day";
+    button.textContent = day;
+    button.dataset.date = dateString;
+    button.dataset.dateIso = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    button.disabled = state !== "green";
+    button.setAttribute("aria-disabled", state === "green" ? "false" : "true");
+
+    if (state === "green") {
+      button.classList.add("active-green");
+      button.addEventListener("click", () => showOrderPage(dateString));
+    } else {
+      button.classList.add("inactive-gray");
+    }
+
+    calendar.appendChild(button);
+  }
+}
 
 function prepareMenuLoadingState() {
   menusContainer.innerHTML = "";
