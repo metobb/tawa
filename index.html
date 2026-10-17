@@ -30,13 +30,6 @@
             <span>Lieferung Täglich 18:30-19:00</span>
           </div>
         </div>
-
-        <section class="start-preview-section" aria-label="Menüvorschau">
-          <div id="startPreviewLoading" class="start-preview-loading" aria-live="polite">
-            Menüs werden geladen...
-          </div>
-          <div id="startMenuPreviews" class="start-menu-previews" aria-live="polite"></div>
-        </section>
       </div>
     </section>
 
@@ -48,6 +41,14 @@
         <p class="calendar-help">Die nächsten verfügbaren Tage sind grün markiert.</p>
         <button id="calendarHomeButton" class="home-button" type="button" data-page="startPage">Startseite</button>
       </div>
+
+      <section class="start-preview-section calendar-preview-section" aria-label="Menüvorschau">
+        <h2 class="start-preview-title">Menüvorschau</h2>
+        <div id="startPreviewLoading" class="start-preview-loading" aria-live="polite" hidden>
+          Menüs werden geladen...
+        </div>
+        <div id="startMenuPreviews" class="start-menu-previews" aria-live="polite"></div>
+      </section>
     </section>
 
     <!-- Menu/order page -->

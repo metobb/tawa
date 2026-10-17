@@ -345,7 +345,7 @@ function showStartPage() {
   leaveModal.classList.add("hidden");
   resetOrderPage();
   showPage("startPage");
-  renderStartMenuPreviews();
+  // Menu previews are intentionally not rendered on the start page.
 }
 
 function showCalendarPage() {
@@ -354,6 +354,7 @@ function showCalendarPage() {
   leaveModal.classList.add("hidden");
   showPage("calendarPage");
   renderCalendar();
+  renderStartMenuPreviews();
 }
 
 function showOrderPage(dateString) {
