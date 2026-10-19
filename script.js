@@ -502,20 +502,52 @@ function renderMenus() {
       const mealBox = document.createElement("div");
       mealBox.className = "meal";
 
+      const imageStage = document.createElement("div");
+      imageStage.className = "meal-image-stage";
+
       const img = document.createElement("img");
-      img.src = meal.picture;
+      img.src = meal.picture || "";
       img.alt = meal.meal;
       img.loading = "eager";
       img.decoding = "async";
       img.onerror = () => {
-        img.style.display = "none";
+        img.style.visibility = "hidden";
       };
+
+      const ingredientsOverlay = document.createElement("div");
+      ingredientsOverlay.className = "meal-ingredients-overlay";
+      ingredientsOverlay.hidden = true;
+
+      const ingredientsText = document.createElement("div");
+      ingredientsText.className = "meal-ingredients-text";
+      ingredientsText.textContent = String(meal.ingredients || "").trim() || "Keine Zutaten angegeben.";
+      ingredientsOverlay.appendChild(ingredientsText);
+
+      const toggleButton = document.createElement("button");
+      toggleButton.className = "meal-ingredients-toggle";
+      toggleButton.type = "button";
+      toggleButton.setAttribute("aria-label", `Zutaten für ${meal.meal} anzeigen`);
+      toggleButton.setAttribute("aria-pressed", "false");
+      toggleButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l10-6.5z"></path></svg>';
+      toggleButton.addEventListener("click", () => {
+        const showIngredients = ingredientsOverlay.hidden;
+        ingredientsOverlay.hidden = !showIngredients;
+        toggleButton.classList.toggle("is-active", showIngredients);
+        toggleButton.setAttribute("aria-pressed", String(showIngredients));
+        toggleButton.setAttribute("aria-label", showIngredients
+          ? `Bild von ${meal.meal} anzeigen`
+          : `Zutaten für ${meal.meal} anzeigen`);
+      });
+
+      imageStage.appendChild(img);
+      imageStage.appendChild(ingredientsOverlay);
+      imageStage.appendChild(toggleButton);
 
       const name = document.createElement("p");
       name.className = "meal-name";
       name.textContent = meal.meal;
 
-      mealBox.appendChild(img);
+      mealBox.appendChild(imageStage);
       mealBox.appendChild(name);
       mealsGrid.appendChild(mealBox);
     });
