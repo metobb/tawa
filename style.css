@@ -568,27 +568,32 @@ h1, h2 { margin-top: 0; }
   background: #eee;
 }
 
-.meal-ingredients-overlay {
-  position: absolute;
-  inset: 0;
+/* Ingredients overlay: pin the content to its top-left corner. */
+.meal-image-stage .meal-ingredients-overlay {
+  position: absolute !important;
+  inset: 0 !important;
   z-index: 2;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
+  display: block;
   box-sizing: border-box;
-  padding: 14px 14px 92px;
+  padding: 14px 14px 92px !important;
   overflow-y: auto;
+  overflow-x: hidden;
   background: rgba(255, 255, 255, 0.91);
   color: var(--black);
-  text-align: left;
+  text-align: left !important;
 }
 
-.meal-ingredients-overlay[hidden] {
-  display: none;
+.meal-image-stage .meal-ingredients-overlay[hidden] {
+  display: none !important;
 }
 
-.meal-ingredients-text {
+.meal-image-stage .meal-ingredients-text {
+  display: block;
+  position: static !important;
   width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
   font-size: 14px;
   line-height: 1.45;
   white-space: pre-line;
