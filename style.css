@@ -1152,14 +1152,22 @@ h1, h2 { margin-top: 0; }
   font-weight: 700;
 }
 .calendar-day.active-green:hover { background: #d8f1df; }
-.calendar-day.selected-date {
-  background: var(--fandango);
-  border: 2px solid var(--fandango);
-  color: #fff;
-  font-weight: 700;
+/* Selected active dates must override the earlier green rules that use !important. */
+#calendar .calendar-day.active-green.selected-date,
+#calendar .calendar-day.active-green.selected-date:disabled {
+  background: var(--fandango) !important;
+  border: 2px solid var(--fandango) !important;
+  border-color: var(--fandango) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
   box-shadow: 0 0 0 2px rgba(181, 52, 137, 0.16);
 }
-.calendar-day.selected-date:hover { background: var(--fandango); }
+#calendar .calendar-day.active-green.selected-date:hover,
+#calendar .calendar-day.active-green.selected-date:focus-visible {
+  background: var(--fandango) !important;
+  border-color: var(--fandango) !important;
+  color: #fff !important;
+}
 .next-calendar-button {
   width: 100%;
   min-height: 50px;
