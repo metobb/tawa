@@ -156,6 +156,9 @@ function createPreviewImage(meal, menu) {
   const images = document.createElement("div");
   images.className = "start-preview-images single-image";
 
+  const frame = document.createElement("div");
+  frame.className = "start-preview-image-frame";
+
   if (meal && meal.picture) {
     const img = document.createElement("img");
     img.className = "start-preview-image";
@@ -177,14 +180,20 @@ function createPreviewImage(meal, menu) {
       }
     };
 
-    images.appendChild(img);
+    frame.appendChild(img);
   } else {
     const placeholder = document.createElement("div");
     placeholder.className = "start-preview-image";
     placeholder.setAttribute("aria-hidden", "true");
-    images.appendChild(placeholder);
+    frame.appendChild(placeholder);
   }
 
+  const mealCaption = document.createElement("div");
+  mealCaption.className = "start-preview-meal-caption";
+  mealCaption.textContent = meal && meal.meal ? meal.meal : "";
+  frame.appendChild(mealCaption);
+
+  images.appendChild(frame);
   return images;
 }
 
@@ -227,7 +236,7 @@ function buildStartPreviewCard(date, menus = null, loading = false) {
     menuName.textContent = menu.menu;
     menuSection.appendChild(menuName);
 
-    const meal = (menu.meals || []).find(item => item.picture);
+    const meal = (menu.meals || [])[0] || null;
     const images = createPreviewImage(meal, menu);
 
     menuSection.appendChild(images);

@@ -286,13 +286,35 @@ button, input, select, textarea { font: inherit; }
   display: block;
 }
 
-.start-preview-image {
+.start-preview-image-frame {
+  position: relative;
   width: 100%;
   height: 112px;
-  display: block;
-  object-fit: cover;
+  overflow: hidden;
   border-radius: 5px;
   background: #eee;
+}
+
+.start-preview-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  background: #eee;
+}
+
+.start-preview-meal-caption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 5px 6px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #111;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .start-preview-empty {
@@ -862,8 +884,12 @@ h1, h2 { margin-top: 0; }
   .start-preview-card.is-loading {
     min-height: 155px;
   }
-  .start-preview-image {
+  .start-preview-image-frame {
     height: 92px;
+  }
+  .start-preview-meal-caption {
+    padding: 4px 5px;
+    font-size: 10px;
   }
   .start-preview-menu {
     padding: 7px 5px;
