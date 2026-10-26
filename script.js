@@ -204,8 +204,19 @@ function buildStartPreviewCard(date, menus = null, loading = false) {
   const card = document.createElement("article");
   card.className = "start-preview-card";
   card.dataset.date = dateString;
-  card.tabIndex = -1;
-  card.setAttribute("aria-label", `Menüvorschau für ${germanDayTitle(date)}`);
+  card.tabIndex = loading ? -1 : 0;
+  card.setAttribute("aria-label", `Menüvorschau für ${germanDayTitle(date)} öffnen`);
+
+  if (!loading) {
+    card.setAttribute("role", "button");
+    card.addEventListener("click", () => openPreviewDate(dateString));
+    card.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openPreviewDate(dateString);
+      }
+    });
+  }
 
   if (loading) {
     card.classList.add("is-loading");
@@ -355,6 +366,15 @@ function showCalendarPage() {
   showPage("calendarPage");
   renderCalendar();
   renderStartMenuPreviews();
+}
+
+function openPreviewDate(dateString) {
+  // A preview is a shortcut into that specific date's menu section.
+  // Keep the calendar selection in sync with the date being opened.
+  selectedCalendarDates.clear();
+  selectedCalendarDates.add(dateString);
+  updateCalendarSelectionUI();
+  showOrderPage([dateString]);
 }
 
 function showOrderPage(dateStrings) {
