@@ -374,10 +374,10 @@ function openPreviewDate(dateString) {
   selectedCalendarDates.clear();
   selectedCalendarDates.add(dateString);
   updateCalendarSelectionUI();
-  showOrderPage([dateString]);
+  showOrderPage([dateString], dateString);
 }
 
-function showOrderPage(dateStrings) {
+function showOrderPage(dateStrings, expandedDateString = null) {
   confirmationModal.classList.add("hidden");
   errorModal.classList.add("hidden");
   leaveModal.classList.add("hidden");
@@ -393,7 +393,7 @@ function showOrderPage(dateStrings) {
   selectedDateTitle.textContent = "Menüs auswählen";
   showPage("menuPage");
   prepareMenuLoadingState();
-  loadMenusForDates(dates);
+  loadMenusForDates(dates, expandedDateString);
 }
 
 function toggleCalendarDate(dateString) {
@@ -471,7 +471,7 @@ function prepareMenuLoadingState() {
   menuLoadingBar.hidden = false;
 }
 
-async function loadMenusForDates(dateStrings) {
+async function loadMenusForDates(dateStrings, expandedDateString = null) {
   try {
     const dateResults = await Promise.all(dateStrings.map(async dateString => {
       const menus = await fetchMenusForDate(dateString);
@@ -491,13 +491,15 @@ async function loadMenusForDates(dateStrings) {
       const toggle = document.createElement("button");
       toggle.type = "button";
       toggle.className = "date-menu-toggle";
-      toggle.setAttribute("aria-expanded", "false");
+      const initiallyExpanded = dateString === expandedDateString;
+      toggle.setAttribute("aria-expanded", String(initiallyExpanded));
+      toggle.classList.toggle("expanded", initiallyExpanded);
       toggle.innerHTML = `<span class="date-menu-title"></span><span class="date-menu-chevron" aria-hidden="true">▼</span>`;
       toggle.querySelector(".date-menu-title").textContent = germanDayTitle(parseDisplayDate(dateString));
 
       const panel = document.createElement("div");
       panel.className = "date-menu-content";
-      panel.hidden = true;
+      panel.hidden = !initiallyExpanded;
       const dayMenus = document.createElement("div");
       dayMenus.className = "menus-container date-menus-container";
       renderMenus(dateString, menus, dayMenus);
