@@ -35,6 +35,7 @@ const startPreviewLoading = document.getElementById("startPreviewLoading");
 
 let selectedMenuDate = "";
 let currentMenus = [];
+const selectedCalendarDates = new Set();
 let pendingLeavePage = "";
 let pendingOrderPayload = null;
 const startPreviewCache = new Map();
@@ -203,9 +204,8 @@ function buildStartPreviewCard(date, menus = null, loading = false) {
   const card = document.createElement("article");
   card.className = "start-preview-card";
   card.dataset.date = dateString;
-  card.tabIndex = loading ? -1 : 0;
-  card.setAttribute("role", "button");
-  card.setAttribute("aria-label", `Menüs für ${germanDayTitle(date)} öffnen`);
+  card.tabIndex = -1;
+  card.setAttribute("aria-label", `Menüvorschau für ${germanDayTitle(date)}`);
 
   if (loading) {
     card.classList.add("is-loading");
@@ -244,15 +244,6 @@ function buildStartPreviewCard(date, menus = null, loading = false) {
   });
 
   card.appendChild(menusRow);
-
-  const openDate = () => showOrderPage(dateString);
-  card.addEventListener("click", openDate);
-  card.addEventListener("keydown", event => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openDate();
-    }
-  });
 
   return card;
 }
@@ -366,20 +357,39 @@ function showCalendarPage() {
   renderStartMenuPreviews();
 }
 
-function showOrderPage(dateString) {
+function showOrderPage(dateStrings) {
   confirmationModal.classList.add("hidden");
   errorModal.classList.add("hidden");
   leaveModal.classList.add("hidden");
 
-  selectedMenuDate = dateString;
-  selectedDateTitle.textContent = `Menüs für ${dateString}`;
+  const dates = [...new Set(dateStrings)].sort((a, b) => {
+    const [ad, am, ay] = a.split(".").map(Number);
+    const [bd, bm, by] = b.split(".").map(Number);
+    return new Date(ay, am - 1, ad) - new Date(by, bm - 1, bd);
+  });
+  if (!dates.length) return;
 
-  // Show the menu page immediately. While the request is running,
-  // only navigation, selected date and the loading bar are visible.
+  selectedMenuDate = dates[0];
+  selectedDateTitle.textContent = "Menüs auswählen";
   showPage("menuPage");
   prepareMenuLoadingState();
+  loadMenusForDates(dates);
+}
 
-  loadMenusForDate(dateString);
+function toggleCalendarDate(dateString) {
+  if (selectedCalendarDates.has(dateString)) selectedCalendarDates.delete(dateString);
+  else selectedCalendarDates.add(dateString);
+  updateCalendarSelectionUI();
+}
+
+function updateCalendarSelectionUI() {
+  calendar.querySelectorAll(".calendar-day[data-date]").forEach(button => {
+    const selected = selectedCalendarDates.has(button.dataset.date);
+    button.classList.toggle("selected-date", selected);
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+  const nextButton = document.getElementById("nextCalendarButton");
+  if (nextButton) nextButton.disabled = selectedCalendarDates.size === 0;
 }
 
 function renderCalendar() {
@@ -422,13 +432,14 @@ function renderCalendar() {
 
     if (state === "green") {
       button.classList.add("active-green");
-      button.addEventListener("click", () => showOrderPage(dateString));
+      button.addEventListener("click", () => toggleCalendarDate(dateString));
     } else {
       button.classList.add("inactive-gray");
     }
 
     calendar.appendChild(button);
   }
+  updateCalendarSelectionUI();
 }
 
 function prepareMenuLoadingState() {
@@ -436,42 +447,55 @@ function prepareMenuLoadingState() {
   currentMenus = [];
   updateTotal();
   resetDeliveryDetails();
-
   orderContent.classList.add("hidden");
   menuLoadingBar.hidden = false;
 }
 
-async function loadMenusForDate(dateString) {
+async function loadMenusForDates(dateStrings) {
   try {
-    const url = `${API_URL}?action=menus&date=${encodeURIComponent(dateString)}`;
-    const response = await fetch(url, {
-      method: "GET",
-      mode: "cors",
-      cache: "no-store"
+    const dateResults = await Promise.all(dateStrings.map(async dateString => {
+      const menus = await fetchMenusForDate(dateString);
+      if (!Array.isArray(menus) || menus.length !== 2) {
+        throw new Error(menus.length === 0
+          ? `Für ${dateString} sind keine Menüs verfügbar.`
+          : `Für ${dateString} wurden ${menus.length} statt 2 Menüs gefunden.`);
+      }
+      return { dateString, menus };
+    }));
+
+    menusContainer.innerHTML = "";
+    dateResults.forEach(({ dateString, menus }) => {
+      const datePanel = document.createElement("section");
+      datePanel.className = "date-menu-panel";
+
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "date-menu-toggle";
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.innerHTML = `<span class="date-menu-title"></span><span class="date-menu-chevron" aria-hidden="true">▼</span>`;
+      toggle.querySelector(".date-menu-title").textContent = germanDayTitle(parseDisplayDate(dateString));
+
+      const panel = document.createElement("div");
+      panel.className = "date-menu-content";
+      panel.hidden = true;
+      const dayMenus = document.createElement("div");
+      dayMenus.className = "menus-container date-menus-container";
+      renderMenus(dateString, menus, dayMenus);
+      panel.appendChild(dayMenus);
+
+      toggle.addEventListener("click", () => {
+        const expanded = toggle.getAttribute("aria-expanded") === "true";
+        toggle.setAttribute("aria-expanded", String(!expanded));
+        panel.hidden = expanded;
+        toggle.classList.toggle("expanded", !expanded);
+      });
+
+      datePanel.appendChild(toggle);
+      datePanel.appendChild(panel);
+      menusContainer.appendChild(datePanel);
     });
 
-    if (!response.ok) {
-      throw new Error(`Menu request failed (${response.status})`);
-    }
-
-    const data = await response.json();
-    if (!data.ok) {
-      throw new Error(data.error || "Menüs wurden nicht geladen.");
-    }
-
-    currentMenus = Array.isArray(data.menus) ? data.menus : [];
-
-    if (currentMenus.length !== 2) {
-      if (currentMenus.length === 0) {
-        throw new Error("Für dieses Datum sind keine Menüs verfügbar.");
-      }
-      throw new Error(`Es wurden ${currentMenus.length} statt 2 Menüs für dieses Datum gefunden.`);
-    }
-
-    renderMenus();
     resetDeliveryDetails();
-
-    // Only after the menu data has arrived do the menu/order sections become visible.
     menuLoadingBar.hidden = true;
     orderContent.classList.remove("hidden");
   } catch (error) {
@@ -482,10 +506,13 @@ async function loadMenusForDate(dateString) {
   }
 }
 
-function renderMenus() {
-  menusContainer.innerHTML = "";
+function parseDisplayDate(dateString) {
+  const [day, month, year] = dateString.split(".").map(Number);
+  return new Date(year, month - 1, day);
+}
 
-  currentMenus.forEach((menu, index) => {
+function renderMenus(dateString, menus, targetContainer) {
+  menus.forEach((menu, index) => {
     const card = document.createElement("article");
     card.className = "menu-card";
 
@@ -575,7 +602,9 @@ function renderMenus() {
     const select = document.createElement("select");
     select.className = "menu-amount";
     select.dataset.menuIndex = String(index);
-    select.setAttribute("aria-label", `Anzahl für ${menu.menu}`);
+    select.dataset.menuName = menu.menu;
+    select.dataset.menuDate = dateString;
+    select.setAttribute("aria-label", `Anzahl für ${menu.menu} am ${dateString}`);
 
     const zero = document.createElement("option");
     zero.value = "0";
@@ -623,7 +652,7 @@ function renderMenus() {
     // additional price box below the quantity selector.
     controls.appendChild(amountControlRow);
     card.appendChild(controls);
-    menusContainer.appendChild(card);
+    targetContainer.appendChild(card);
   });
 
   updateTotal();
@@ -651,7 +680,8 @@ function resetDeliveryDetails() {
 function getSelectedOrders() {
   return [...document.querySelectorAll(".menu-amount")]
     .map(select => ({
-      menu: currentMenus[Number(select.dataset.menuIndex)]?.menu || "",
+      menu: select.dataset.menuName || "",
+      dateOfMenu: select.dataset.menuDate || "",
       amount: Number(select.value) || 0
     }))
     .filter(item => item.amount > 0);
@@ -666,7 +696,7 @@ function updateTotal() {
 function buildOrderConfirmationMessage(selectedOrders) {
   const lines = selectedOrders.map(item => {
     const lineTotal = item.amount * PRICE_PER_MENU;
-    return `${item.menu}: ${item.amount} x ${PRICE_PER_MENU.toFixed(2)} € = ${lineTotal.toFixed(2)} €`;
+    return `${item.dateOfMenu} – ${item.menu}: ${item.amount} x ${PRICE_PER_MENU.toFixed(2)} € = ${lineTotal.toFixed(2)} €`;
   });
 
   const total = selectedOrders.reduce(
@@ -746,7 +776,7 @@ async function submitOrder(event) {
 
   const payload = {
     orders: selectedOrders,
-    dateOfMenu: selectedMenuDate,
+    dateOfMenu: selectedOrders[0]?.dateOfMenu || selectedMenuDate,
     surname: document.getElementById("surname").value.trim(),
     street: document.getElementById("street").value,
     houseNumber: document.getElementById("houseNumber").value.trim(),
@@ -839,6 +869,7 @@ function resetOrderPage() {
   menusContainer.innerHTML = "";
   currentMenus = [];
   selectedMenuDate = "";
+  selectedCalendarDates.clear();
   menuLoadingBar.hidden = true;
   orderContent.classList.add("hidden");
   updateTotal();
@@ -854,9 +885,14 @@ function showError(message, title = "Es ist ein Fehler aufgetreten", largeText =
 document.addEventListener("DOMContentLoaded", () => {
   const dinnerButton = document.getElementById("dinnerButton");
   const calendarHomeButton = document.getElementById("calendarHomeButton");
+  const nextCalendarButton = document.getElementById("nextCalendarButton");
 
   if (dinnerButton) dinnerButton.addEventListener("click", showCalendarPage);
   if (calendarHomeButton) calendarHomeButton.addEventListener("click", showStartPage);
+  if (nextCalendarButton) nextCalendarButton.addEventListener("click", () => {
+    if (selectedCalendarDates.size === 0) return;
+    showOrderPage([...selectedCalendarDates]);
+  });
   if (deliveryToggle) deliveryToggle.addEventListener("click", toggleDeliveryDetails);
 
   bindNavigationButtons();

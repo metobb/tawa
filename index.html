@@ -38,7 +38,8 @@
       <div class="calendar-card">
         <h1>Bestelldatum auswählen</h1>
         <div id="calendar" class="calendar" aria-label="Menükalender"></div>
-        <p class="calendar-help">Die nächsten verfügbaren Tage sind grün markiert.</p>
+        <p class="calendar-help">Wählen Sie einen oder mehrere grün markierte Tage aus.</p>
+        <button id="nextCalendarButton" class="next-calendar-button" type="button" disabled>Weiter</button>
         <button id="calendarHomeButton" class="home-button" type="button" data-page="startPage">Startseite</button>
       </div>
 
@@ -73,7 +74,7 @@
 
       <!-- Hidden until the menus have finished loading. -->
       <div id="orderContent" class="order-content hidden">
-        <div id="menusContainer" class="menus-container"></div>
+        <div id="menusContainer" class="date-menus-accordion"></div>
 
         <form id="orderForm" class="customer-form" novalidate>
           <button id="deliveryToggle" class="delivery-toggle" type="button" aria-expanded="false" aria-controls="deliveryFields">
