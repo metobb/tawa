@@ -1185,9 +1185,10 @@ h1, h2 { margin-top: 0; }
 /* Selected dates on the menu page use the same collapsible Fandango style as Bestellen. */
 .date-menus-accordion {
   width: min(100%, 680px);
-  margin: 0 auto 24px;
+  /* More breathing room between date sections and before Bestellen. */
+  margin: 0 auto 48px;
   display: grid;
-  gap: 14px;
+  gap: 28px;
 }
 .date-menu-panel { width: 100%; min-width: 0; }
 .date-menu-toggle {
@@ -1209,7 +1210,23 @@ h1, h2 { margin-top: 0; }
 }
 .date-menu-toggle:hover { background: #9f2d78; }
 .date-menu-title { flex: 1; }
-.date-menu-chevron { font-size: 16px; transition: transform 0.2s ease; }
+.date-menu-chevron {
+  flex: 0 0 auto;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 9px;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 23px;
+  line-height: 1;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  background: rgba(255, 255, 255, 0.10);
+}
+.date-menu-toggle:hover .date-menu-chevron { background: rgba(255, 255, 255, 0.20); }
 .date-menu-toggle.expanded .date-menu-chevron { transform: rotate(180deg); }
 .date-menu-content { padding-top: 14px; }
 .date-menu-content[hidden] { display: none !important; }
@@ -1220,4 +1237,5 @@ h1, h2 { margin-top: 0; }
 }
 @media (max-width: 600px) {
   .date-menu-toggle { min-height: 48px; padding: 0 14px; font-size: 18px; }
+  .date-menu-chevron { min-width: 40px; height: 33px; font-size: 21px; }
 }
