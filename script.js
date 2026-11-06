@@ -494,7 +494,7 @@ async function loadMenusForDates(dateStrings, expandedDateString = null) {
       const initiallyExpanded = dateString === expandedDateString;
       toggle.setAttribute("aria-expanded", String(initiallyExpanded));
       toggle.classList.toggle("expanded", initiallyExpanded);
-      toggle.innerHTML = `<span class="date-menu-title"></span><span class="date-menu-chevron" aria-hidden="true">▼</span>`;
+      toggle.innerHTML = `<span class="date-menu-chevron" aria-hidden="true">▼</span><span class="date-menu-title"></span><span class="date-menu-chevron" aria-hidden="true">▼</span>`;
       toggle.querySelector(".date-menu-title").textContent = germanDayTitle(parseDisplayDate(dateString));
 
       const panel = document.createElement("div");

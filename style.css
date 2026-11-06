@@ -1188,7 +1188,7 @@ h1, h2 { margin-top: 0; }
   /* More breathing room between date sections and before Bestellen. */
   margin: 0 auto 48px;
   display: grid;
-  gap: 28px;
+  gap: 56px;
 }
 .date-menu-panel { width: 100%; min-width: 0; }
 .date-menu-toggle {
