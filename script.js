@@ -200,7 +200,7 @@ function createPreviewImage(meal, menu) {
   return images;
 }
 
-function buildStartPreviewCard(date, menus = null, loading = false, interactive = true) {
+function buildStartPreviewCard(date, menus = null, loading = false, interactive = true, includeSecondMeal = false) {
   const dateString = displayDate(date);
 
   const card = document.createElement("article");
@@ -263,11 +263,14 @@ function buildStartPreviewCard(date, menus = null, loading = false, interactive 
 
     menuSection.appendChild(images);
 
-    const secondMeal = (menu.meals || [])[1] || null;
-    const secondMealName = document.createElement("p");
-    secondMealName.className = "start-preview-second-meal";
-    secondMealName.textContent = secondMeal && secondMeal.meal ? secondMeal.meal : "";
-    if (secondMealName.textContent) menuSection.appendChild(secondMealName);
+    if (includeSecondMeal) {
+      const secondMeal = (menu.meals || [])[1] || null;
+      if (secondMeal) {
+        const secondMealPreview = createPreviewImage(secondMeal, menu);
+        secondMealPreview.classList.add("start-preview-second-image");
+        menuSection.appendChild(secondMealPreview);
+      }
+    }
 
     menusRow.appendChild(menuSection);
   });
@@ -316,7 +319,7 @@ function getTargetWeekDates(today = new Date()) {
   });
 }
 
-async function renderPreviewCollection(container, dates, interactive) {
+async function renderPreviewCollection(container, dates, interactive, includeSecondMeal = false) {
   if (!container) return;
   container.innerHTML = "";
 
@@ -329,7 +332,7 @@ async function renderPreviewCollection(container, dates, interactive) {
   }
 
   const cards = dates.map(date => {
-    const card = buildStartPreviewCard(date, null, true, interactive);
+    const card = buildStartPreviewCard(date, null, true, interactive, includeSecondMeal);
     container.appendChild(card);
     return { date, card };
   });
@@ -338,7 +341,7 @@ async function renderPreviewCollection(container, dates, interactive) {
     const dateString = displayDate(date);
     try {
       const menus = await fetchMenusForDate(dateString);
-      const loadedCard = buildStartPreviewCard(date, menus, false, interactive);
+      const loadedCard = buildStartPreviewCard(date, menus, false, interactive, includeSecondMeal);
       card.replaceWith(loadedCard);
     } catch (error) {
       console.error(`Preview loading failed for ${dateString}:`, error);
@@ -363,12 +366,12 @@ async function renderPreviewCollection(container, dates, interactive) {
 async function renderStartMenuPreviews() {
   const activeDates = getActiveCalendarDates(new Date());
   if (startPreviewLoading) startPreviewLoading.hidden = true;
-  await renderPreviewCollection(startMenuPreviews, activeDates, true);
+  await renderPreviewCollection(startMenuPreviews, activeDates, true, false);
 }
 
 async function renderHomeMenuPreviews() {
   if (homePreviewLoading) homePreviewLoading.hidden = true;
-  await renderPreviewCollection(homeMenuPreviews, getTargetWeekDates(new Date()), false);
+  await renderPreviewCollection(homeMenuPreviews, getTargetWeekDates(new Date()), false, true);
 }
 
 function showPage(pageId) {
