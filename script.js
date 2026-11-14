@@ -120,6 +120,12 @@ function germanDayTitle(date) {
   return `${weekday}, ${displayDate(date)}`;
 }
 
+function previewDayTitle(date) {
+  const weekday = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(date);
+  const dayMonth = `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
+  return `${weekday}, ${dayMonth}`;
+}
+
 async function fetchMenusForDate(dateString) {
   if (startPreviewCache.has(dateString)) {
     return startPreviewCache.get(dateString);
@@ -200,7 +206,7 @@ function createPreviewImage(meal, menu) {
   return images;
 }
 
-function buildStartPreviewCard(date, menus = null, loading = false, interactive = true, includeSecondMeal = false) {
+function buildStartPreviewCard(date, menus = null, loading = false, interactive = true, includeSecondMeal = false, showMenuNames = true) {
   const dateString = displayDate(date);
 
   const card = document.createElement("article");
@@ -235,7 +241,7 @@ function buildStartPreviewCard(date, menus = null, loading = false, interactive 
 
   const dayTitle = document.createElement("h3");
   dayTitle.className = "start-preview-day";
-  dayTitle.textContent = germanDayTitle(date);
+  dayTitle.textContent = previewDayTitle(date);
   card.appendChild(dayTitle);
 
   const menusRow = document.createElement("div");
@@ -253,10 +259,12 @@ function buildStartPreviewCard(date, menus = null, loading = false, interactive 
     const menuSection = document.createElement("div");
     menuSection.className = "start-preview-menu";
 
-    const menuName = document.createElement("h4");
-    menuName.className = "start-preview-menu-name";
-    menuName.textContent = menu.menu;
-    menuSection.appendChild(menuName);
+    if (showMenuNames) {
+      const menuName = document.createElement("h4");
+      menuName.className = "start-preview-menu-name";
+      menuName.textContent = menu.menu;
+      menuSection.appendChild(menuName);
+    }
 
     const meal = (menu.meals || [])[0] || null;
     const images = createPreviewImage(meal, menu);
@@ -319,7 +327,7 @@ function getTargetWeekDates(today = new Date()) {
   });
 }
 
-async function renderPreviewCollection(container, dates, interactive, includeSecondMeal = false) {
+async function renderPreviewCollection(container, dates, interactive, includeSecondMeal = false, showMenuNames = true) {
   if (!container) return;
   container.innerHTML = "";
 
@@ -332,7 +340,7 @@ async function renderPreviewCollection(container, dates, interactive, includeSec
   }
 
   const cards = dates.map(date => {
-    const card = buildStartPreviewCard(date, null, true, interactive, includeSecondMeal);
+    const card = buildStartPreviewCard(date, null, true, interactive, includeSecondMeal, showMenuNames);
     container.appendChild(card);
     return { date, card };
   });
@@ -341,7 +349,7 @@ async function renderPreviewCollection(container, dates, interactive, includeSec
     const dateString = displayDate(date);
     try {
       const menus = await fetchMenusForDate(dateString);
-      const loadedCard = buildStartPreviewCard(date, menus, false, interactive, includeSecondMeal);
+      const loadedCard = buildStartPreviewCard(date, menus, false, interactive, includeSecondMeal, showMenuNames);
       card.replaceWith(loadedCard);
     } catch (error) {
       console.error(`Preview loading failed for ${dateString}:`, error);
@@ -352,7 +360,7 @@ async function renderPreviewCollection(container, dates, interactive, includeSec
 
       const dayTitle = document.createElement("h3");
       dayTitle.className = "start-preview-day";
-      dayTitle.textContent = germanDayTitle(date);
+      dayTitle.textContent = previewDayTitle(date);
       card.appendChild(dayTitle);
 
       const message = document.createElement("div");
@@ -371,7 +379,7 @@ async function renderStartMenuPreviews() {
 
 async function renderHomeMenuPreviews() {
   if (homePreviewLoading) homePreviewLoading.hidden = true;
-  await renderPreviewCollection(homeMenuPreviews, getTargetWeekDates(new Date()), false, true);
+  await renderPreviewCollection(homeMenuPreviews, getTargetWeekDates(new Date()), false, true, false);
 }
 
 function showPage(pageId) {
