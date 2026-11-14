@@ -25,31 +25,50 @@
             Abendessen
           </button>
 
-          <div class="delivery-notice" aria-label="Lieferzeit">
-            <span class="delivery-signal" aria-hidden="true"></span>
-            <span>Lieferung Täglich 18:30-19:00</span>
+          <div class="home-notifications" aria-label="Lieferinformationen">
+            <div class="delivery-notice" aria-label="Lieferzeit">
+              <span class="delivery-signal" aria-hidden="true"></span>
+              <span>Lieferung täglich 18:30–19:00 Uhr</span>
+            </div>
+            <div class="delivery-notice" aria-label="Zahlungsarten">
+              <span class="delivery-signal" aria-hidden="true"></span>
+              <span>Zahlung bei Lieferung mit Karte/PayPal/Bar</span>
+            </div>
+            <div class="delivery-notice" aria-label="Pilotgebiet">
+              <span class="delivery-signal" aria-hidden="true"></span>
+              <span>Pilotphase – Lieferung nur in der Vereinsstraße</span>
+            </div>
           </div>
         </div>
+
+        <section class="start-preview-section home-preview-section" aria-label="Wochenvorschau">
+          <h2 class="start-preview-title">Köstlichkeiten der Woche</h2>
+          <div id="homePreviewLoading" class="start-preview-loading" aria-live="polite" hidden>Menüs werden geladen...</div>
+          <div id="homeMenuPreviews" class="start-menu-previews home-menu-previews" aria-live="polite"></div>
+        </section>
       </div>
     </section>
 
     <!-- Calendar page -->
     <section id="calendarPage" class="page hidden">
-      <div class="calendar-card">
-        <h1>Bestelldatum auswählen</h1>
-        <div id="calendar" class="calendar" aria-label="Menükalender"></div>
-        <p class="calendar-help">Wählen Sie einen oder mehrere grün markierte Tage aus.</p>
-        <button id="nextCalendarButton" class="next-calendar-button" type="button" disabled>Weiter</button>
-        <button id="calendarHomeButton" class="home-button" type="button" data-page="startPage">Startseite</button>
-      </div>
-
-      <section class="start-preview-section calendar-preview-section" aria-label="Köstlichkeiten der Woche">
-        <h2 class="start-preview-title">Köstlichkeiten der Woche</h2>
-        <div id="startPreviewLoading" class="start-preview-loading" aria-live="polite" hidden>
-          Menüs werden geladen...
+      <div class="calendar-layout">
+        <div class="calendar-left">
+          <div class="calendar-card">
+            <h1>Bestelldatum auswählen</h1>
+            <div id="calendar" class="calendar" aria-label="Menükalender"></div>
+            <p class="calendar-help">Wählen Sie einen oder mehrere grün markierte Tage aus.</p>
+            <button id="nextCalendarButton" class="next-calendar-button" type="button" disabled>Weiter</button>
+            <button id="calendarHomeButton" class="home-button" type="button" data-page="startPage">Startseite</button>
+          </div>
         </div>
-        <div id="startMenuPreviews" class="start-menu-previews" aria-live="polite"></div>
-      </section>
+        <div class="calendar-right">
+          <section class="start-preview-section calendar-preview-section" aria-label="Köstlichkeiten der Woche">
+            <h2 class="start-preview-title">Köstlichkeiten der Woche</h2>
+            <div id="startPreviewLoading" class="start-preview-loading" aria-live="polite" hidden>Menüs werden geladen...</div>
+            <div id="startMenuPreviews" class="start-menu-previews calendar-menu-previews" aria-live="polite"></div>
+          </section>
+        </div>
+      </div>
     </section>
 
     <!-- Menu/order page -->
@@ -111,6 +130,12 @@
             </label>
 
             <label>
+              Telefonnummer *
+              <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="Kurz im Klo? Runde für Hunde? Schläft jemand zuhause? Wo ist der Eingang?" required>
+              <small class="field-hint">Damit wir Sie bei der Lieferung erreichen können.</small>
+            </label>
+
+            <label>
               Beschreibung
               <textarea id="description" name="description" rows="4" placeholder="Optional"></textarea>
             </label>
@@ -121,7 +146,7 @@
             <strong id="totalPrice">0.00 €</strong>
           </div>
 
-          <button id="orderButton" class="order-button" type="submit">Bestellen</button>
+          <button id="orderButton" class="order-button" type="submit">zahlungspflichtig bestellen</button>
         </form>
       </div>
 
@@ -132,6 +157,12 @@
     </section>
 
   </main>
+
+  <footer class="site-footer">
+    <a href="impressum.html">Impressum</a>
+    <span aria-hidden="true">·</span>
+    <a href="datenschutz.html">Datenschutzerklärung</a>
+  </footer>
 
   <div id="leaveModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="leaveTitle">
     <div class="modal-card">
@@ -149,7 +180,7 @@
       <h2 id="orderConfirmTitle">Bestellen?</h2>
       <div id="orderConfirmMessage" class="order-confirm-message"></div>
       <div class="order-confirm-buttons">
-        <button id="orderConfirmButton" class="order-confirm-primary" type="button">Bestellen</button>
+        <button id="orderConfirmButton" class="order-confirm-primary" type="button">zahlungspflichtig bestellen</button>
         <button id="orderCancelButton" class="order-confirm-secondary" type="button">Zurück</button>
       </div>
     </div>

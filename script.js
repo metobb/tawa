@@ -32,6 +32,8 @@ const leaveYesButton = document.getElementById("leaveYesButton");
 const leaveNoButton = document.getElementById("leaveNoButton");
 const startMenuPreviews = document.getElementById("startMenuPreviews");
 const startPreviewLoading = document.getElementById("startPreviewLoading");
+const homeMenuPreviews = document.getElementById("homeMenuPreviews");
+const homePreviewLoading = document.getElementById("homePreviewLoading");
 
 let selectedMenuDate = "";
 let currentMenus = [];
@@ -198,17 +200,18 @@ function createPreviewImage(meal, menu) {
   return images;
 }
 
-function buildStartPreviewCard(date, menus = null, loading = false) {
+function buildStartPreviewCard(date, menus = null, loading = false, interactive = true) {
   const dateString = displayDate(date);
 
   const card = document.createElement("article");
   card.className = "start-preview-card";
   card.dataset.date = dateString;
-  card.tabIndex = loading ? -1 : 0;
-  card.setAttribute("aria-label", `Menüvorschau für ${germanDayTitle(date)} öffnen`);
+  card.tabIndex = loading || !interactive ? -1 : 0;
+  card.setAttribute("aria-label", `Menüvorschau für ${germanDayTitle(date)}`);
 
-  if (!loading) {
+  if (!loading && interactive) {
     card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `Menüvorschau für ${germanDayTitle(date)} öffnen`);
     card.addEventListener("click", () => openPreviewDate(dateString));
     card.addEventListener("keydown", event => {
       if (event.key === "Enter" || event.key === " ") {
@@ -238,6 +241,14 @@ function buildStartPreviewCard(date, menus = null, loading = false) {
   const menusRow = document.createElement("div");
   menusRow.className = "start-preview-menus-row";
 
+  if (!menus.length) {
+    const empty = document.createElement("div");
+    empty.className = "start-preview-empty";
+    empty.textContent = "Für diesen Tag sind keine Menüs geplant.";
+    card.appendChild(empty);
+    return card;
+  }
+
   menus.slice(0, 2).forEach(menu => {
     const menuSection = document.createElement("div");
     menuSection.className = "start-preview-menu";
@@ -251,6 +262,13 @@ function buildStartPreviewCard(date, menus = null, loading = false) {
     const images = createPreviewImage(meal, menu);
 
     menuSection.appendChild(images);
+
+    const secondMeal = (menu.meals || [])[1] || null;
+    const secondMealName = document.createElement("p");
+    secondMealName.className = "start-preview-second-meal";
+    secondMealName.textContent = secondMeal && secondMeal.meal ? secondMeal.meal : "";
+    if (secondMealName.textContent) menuSection.appendChild(secondMealName);
+
     menusRow.appendChild(menuSection);
   });
 
@@ -277,63 +295,80 @@ function createPreviewImageUrl(url) {
   return url;
 }
 
-async function renderStartMenuPreviews() {
-  if (!startMenuPreviews || !startPreviewLoading) return;
+function getTargetWeekDates(today = new Date()) {
+  const activeDates = getActiveCalendarDates(today);
+  let monday;
 
-  const activeDates = getActiveCalendarDates(new Date());
+  if (activeDates.length) {
+    monday = mondayOfWeek(activeDates[0]);
+  } else {
+    const current = dateOnly(today);
+    const day = current.getDay();
+    const daysUntilNextMonday = day === 5 ? 3 : day === 6 ? 2 : day === 0 ? 1 : 0;
+    monday = mondayOfWeek(current);
+    if (daysUntilNextMonday) monday.setDate(monday.getDate() + daysUntilNextMonday);
+  }
 
-  startMenuPreviews.innerHTML = "";
-  startPreviewLoading.hidden = true;
+  return Array.from({ length: 5 }, (_, index) => {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + index);
+    return date;
+  });
+}
 
-  if (activeDates.length === 0) {
+async function renderPreviewCollection(container, dates, interactive) {
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!dates.length) {
     const empty = document.createElement("div");
     empty.className = "start-preview-empty";
     empty.textContent = "Aktuell sind keine Menüs zur Vorschau verfügbar.";
-    startMenuPreviews.appendChild(empty);
+    container.appendChild(empty);
     return;
   }
 
-  // Create every active-day window first, in chronological order.
-  // Each window has its own spinner while its date-specific data is loading.
-  const cards = activeDates.map(date => {
-    const card = buildStartPreviewCard(date, null, true);
-    startMenuPreviews.appendChild(card);
+  const cards = dates.map(date => {
+    const card = buildStartPreviewCard(date, null, true, interactive);
+    container.appendChild(card);
     return { date, card };
   });
 
-  // Load each date independently. The position of the cards never changes,
-  // so 24.09 always remains above 25.09, etc.
-  await Promise.all(
-    cards.map(async ({ date, card }) => {
-      const dateString = displayDate(date);
+  await Promise.all(cards.map(async ({ date, card }) => {
+    const dateString = displayDate(date);
+    try {
+      const menus = await fetchMenusForDate(dateString);
+      const loadedCard = buildStartPreviewCard(date, menus, false, interactive);
+      card.replaceWith(loadedCard);
+    } catch (error) {
+      console.error(`Preview loading failed for ${dateString}:`, error);
+      card.classList.remove("is-loading");
+      card.tabIndex = -1;
+      card.removeAttribute("role");
+      card.innerHTML = "";
 
-      try {
-        const menus = await fetchMenusForDate(dateString);
+      const dayTitle = document.createElement("h3");
+      dayTitle.className = "start-preview-day";
+      dayTitle.textContent = germanDayTitle(date);
+      card.appendChild(dayTitle);
 
-        const loadedCard = buildStartPreviewCard(date, menus, false);
-        card.replaceWith(loadedCard);
-      } catch (error) {
-        console.error(`Preview loading failed for ${dateString}:`, error);
+      const message = document.createElement("div");
+      message.className = "start-preview-empty";
+      message.textContent = "Menüs konnten nicht geladen werden.";
+      card.appendChild(message);
+    }
+  }));
+}
 
-        // Keep the same date window and replace the spinner with a simple
-        // loading/error hint instead of removing the window.
-        card.classList.remove("is-loading");
-        card.tabIndex = -1;
-        card.removeAttribute("role");
-        card.innerHTML = "";
+async function renderStartMenuPreviews() {
+  const activeDates = getActiveCalendarDates(new Date());
+  if (startPreviewLoading) startPreviewLoading.hidden = true;
+  await renderPreviewCollection(startMenuPreviews, activeDates, true);
+}
 
-        const dayTitle = document.createElement("h3");
-        dayTitle.className = "start-preview-day";
-        dayTitle.textContent = germanDayTitle(date);
-        card.appendChild(dayTitle);
-
-        const message = document.createElement("div");
-        message.className = "start-preview-empty";
-        message.textContent = "Menüs konnten nicht geladen werden.";
-        card.appendChild(message);
-      }
-    })
-  );
+async function renderHomeMenuPreviews() {
+  if (homePreviewLoading) homePreviewLoading.hidden = true;
+  await renderPreviewCollection(homeMenuPreviews, getTargetWeekDates(new Date()), false);
 }
 
 function showPage(pageId) {
@@ -356,7 +391,7 @@ function showStartPage() {
   leaveModal.classList.add("hidden");
   resetOrderPage();
   showPage("startPage");
-  // Menu previews are intentionally not rendered on the start page.
+  renderHomeMenuPreviews();
 }
 
 function showCalendarPage() {
@@ -715,7 +750,8 @@ function updateTotal() {
   totalPrice.textContent = `${total.toFixed(2)} €`;
 }
 
-function buildOrderConfirmationMessage(selectedOrders) {
+function buildOrderConfirmationMessage(payload) {
+  const selectedOrders = payload.orders || [];
   const lines = selectedOrders.map(item => {
     const lineTotal = item.amount * PRICE_PER_MENU;
     return `${item.dateOfMenu} – ${item.menu}: ${item.amount} x ${PRICE_PER_MENU.toFixed(2)} € = ${lineTotal.toFixed(2)} €`;
@@ -726,12 +762,26 @@ function buildOrderConfirmationMessage(selectedOrders) {
     0
   );
 
-  return `${lines.join("\n")}\n\nTotal: ${total.toFixed(2)} €\n\nAlles in Ordnung?`;
+  return [
+    "Ihre Bestellung:",
+    ...lines,
+    "",
+    `Gesamtsumme: ${total.toFixed(2)} €`,
+    "Zahlung: Bei Lieferung mit Karte, PayPal oder bar",
+    "Lieferzeit: Täglich 18:30–19:00 Uhr",
+    "",
+    "Lieferdetails:",
+    `Name: ${payload.surname}`,
+    `Adresse: ${payload.street} ${payload.houseNumber}, ${payload.zipcode} Hamburg`,
+    `Telefonnummer: ${payload.phone}`,
+    "",
+    "Ist alles korrekt?"
+  ].join("\n");
 }
 
 function showOrderConfirmation(payload) {
   pendingOrderPayload = payload;
-  orderConfirmMessage.textContent = buildOrderConfirmationMessage(payload.orders);
+  orderConfirmMessage.textContent = buildOrderConfirmationMessage(payload);
   orderConfirmModal.classList.remove("hidden");
 }
 
@@ -774,7 +824,7 @@ async function finalizeOrder() {
   } finally {
     orderConfirmButton.disabled = false;
     orderCancelButton.disabled = false;
-    orderConfirmButton.textContent = "Bestellen";
+    orderConfirmButton.textContent = "zahlungspflichtig bestellen";
   }
 }
 
@@ -804,6 +854,7 @@ async function submitOrder(event) {
     houseNumber: document.getElementById("houseNumber").value.trim(),
     zipcode: document.getElementById("zipcode").value.trim(),
     email: document.getElementById("email").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
     description: document.getElementById("description").value.trim()
   };
 
