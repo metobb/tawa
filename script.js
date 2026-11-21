@@ -212,7 +212,7 @@ function createPreviewImage(meal, menu) {
   return images;
 }
 
-function buildStartPreviewCard(date, menus = null, loading = false, interactive = true, includeSecondMeal = false, showMenuNames = true, showAvailabilityColor = false) {
+function buildStartPreviewCard(date, menus = null, loading = false, interactive = true, includeSecondMeal = false, showMenuNames = true, showAvailabilityColor = false, onPreviewClick = null) {
   const dateString = displayDate(date);
 
   const card = document.createElement("article");
@@ -224,11 +224,18 @@ function buildStartPreviewCard(date, menus = null, loading = false, interactive 
   if (!loading && interactive) {
     card.setAttribute("role", "button");
     card.setAttribute("aria-label", `Menüvorschau für ${germanDayTitle(date)} öffnen`);
-    card.addEventListener("click", () => showHomePreviewNotice());
+    const activatePreview = () => {
+      if (typeof onPreviewClick === "function") {
+        onPreviewClick(date);
+      } else {
+        showHomePreviewNotice();
+      }
+    };
+    card.addEventListener("click", activatePreview);
     card.addEventListener("keydown", event => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        showHomePreviewNotice();
+        activatePreview();
       }
     });
   }
@@ -337,7 +344,7 @@ function getTargetWeekDates(today = new Date()) {
   });
 }
 
-async function renderPreviewCollection(container, dates, interactive, includeSecondMeal = false, showMenuNames = true, showAvailabilityColor = false) {
+async function renderPreviewCollection(container, dates, interactive, includeSecondMeal = false, showMenuNames = true, showAvailabilityColor = false, onPreviewClick = null) {
   if (!container) return;
   container.innerHTML = "";
 
@@ -350,7 +357,7 @@ async function renderPreviewCollection(container, dates, interactive, includeSec
   }
 
   const cards = dates.map(date => {
-    const card = buildStartPreviewCard(date, null, true, interactive, includeSecondMeal, showMenuNames, showAvailabilityColor);
+    const card = buildStartPreviewCard(date, null, true, interactive, includeSecondMeal, showMenuNames, showAvailabilityColor, onPreviewClick);
     container.appendChild(card);
     return { date, card };
   });
@@ -359,7 +366,7 @@ async function renderPreviewCollection(container, dates, interactive, includeSec
     const dateString = displayDate(date);
     try {
       const menus = await fetchMenusForDate(dateString);
-      const loadedCard = buildStartPreviewCard(date, menus, false, interactive, includeSecondMeal, showMenuNames, showAvailabilityColor);
+      const loadedCard = buildStartPreviewCard(date, menus, false, interactive, includeSecondMeal, showMenuNames, showAvailabilityColor, onPreviewClick);
       card.replaceWith(loadedCard);
     } catch (error) {
       console.error(`Preview loading failed for ${dateString}:`, error);
@@ -388,7 +395,17 @@ async function renderPreviewCollection(container, dates, interactive, includeSec
 async function renderStartMenuPreviews() {
   const activeDates = getActiveCalendarDates(new Date());
   if (startPreviewLoading) startPreviewLoading.hidden = true;
-  await renderPreviewCollection(startMenuPreviews, activeDates, true, false);
+  // Calendar-page previews are direct shortcuts to the selected day's menu.
+  // The menu accordion remains collapsed when opened from a preview.
+  await renderPreviewCollection(
+    startMenuPreviews,
+    activeDates,
+    true,
+    false,
+    true,
+    false,
+    date => showOrderPage([displayDate(date)])
+  );
 }
 
 async function renderHomeMenuPreviews() {
