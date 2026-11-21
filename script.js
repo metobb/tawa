@@ -34,6 +34,12 @@ const startMenuPreviews = document.getElementById("startMenuPreviews");
 const startPreviewLoading = document.getElementById("startPreviewLoading");
 const homeMenuPreviews = document.getElementById("homeMenuPreviews");
 const homePreviewLoading = document.getElementById("homePreviewLoading");
+const homePreviewModal = document.getElementById("homePreviewModal");
+const homePreviewContinueButton = document.getElementById("homePreviewContinueButton");
+const singleDayModal = document.getElementById("singleDayModal");
+const singleDayYesButton = document.getElementById("singleDayYesButton");
+const singleDayNoButton = document.getElementById("singleDayNoButton");
+let pendingSingleDate = "";
 
 let selectedMenuDate = "";
 let currentMenus = [];
@@ -206,7 +212,7 @@ function createPreviewImage(meal, menu) {
   return images;
 }
 
-function buildStartPreviewCard(date, menus = null, loading = false, interactive = true, includeSecondMeal = false, showMenuNames = true) {
+function buildStartPreviewCard(date, menus = null, loading = false, interactive = true, includeSecondMeal = false, showMenuNames = true, showAvailabilityColor = false) {
   const dateString = displayDate(date);
 
   const card = document.createElement("article");
@@ -218,11 +224,11 @@ function buildStartPreviewCard(date, menus = null, loading = false, interactive 
   if (!loading && interactive) {
     card.setAttribute("role", "button");
     card.setAttribute("aria-label", `Menüvorschau für ${germanDayTitle(date)} öffnen`);
-    card.addEventListener("click", () => openPreviewDate(dateString));
+    card.addEventListener("click", () => showHomePreviewNotice());
     card.addEventListener("keydown", event => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        openPreviewDate(dateString);
+        showHomePreviewNotice();
       }
     });
   }
@@ -242,6 +248,10 @@ function buildStartPreviewCard(date, menus = null, loading = false, interactive 
   const dayTitle = document.createElement("h3");
   dayTitle.className = "start-preview-day";
   dayTitle.textContent = previewDayTitle(date);
+  if (showAvailabilityColor) {
+    const dayState = getCalendarState(date, new Date());
+    dayTitle.classList.add(dayState === "green" ? "preview-day-active" : "preview-day-inactive");
+  }
   card.appendChild(dayTitle);
 
   const menusRow = document.createElement("div");
@@ -327,7 +337,7 @@ function getTargetWeekDates(today = new Date()) {
   });
 }
 
-async function renderPreviewCollection(container, dates, interactive, includeSecondMeal = false, showMenuNames = true) {
+async function renderPreviewCollection(container, dates, interactive, includeSecondMeal = false, showMenuNames = true, showAvailabilityColor = false) {
   if (!container) return;
   container.innerHTML = "";
 
@@ -340,7 +350,7 @@ async function renderPreviewCollection(container, dates, interactive, includeSec
   }
 
   const cards = dates.map(date => {
-    const card = buildStartPreviewCard(date, null, true, interactive, includeSecondMeal, showMenuNames);
+    const card = buildStartPreviewCard(date, null, true, interactive, includeSecondMeal, showMenuNames, showAvailabilityColor);
     container.appendChild(card);
     return { date, card };
   });
@@ -349,7 +359,7 @@ async function renderPreviewCollection(container, dates, interactive, includeSec
     const dateString = displayDate(date);
     try {
       const menus = await fetchMenusForDate(dateString);
-      const loadedCard = buildStartPreviewCard(date, menus, false, interactive, includeSecondMeal, showMenuNames);
+      const loadedCard = buildStartPreviewCard(date, menus, false, interactive, includeSecondMeal, showMenuNames, showAvailabilityColor);
       card.replaceWith(loadedCard);
     } catch (error) {
       console.error(`Preview loading failed for ${dateString}:`, error);
@@ -361,6 +371,10 @@ async function renderPreviewCollection(container, dates, interactive, includeSec
       const dayTitle = document.createElement("h3");
       dayTitle.className = "start-preview-day";
       dayTitle.textContent = previewDayTitle(date);
+      if (showAvailabilityColor) {
+        const dayState = getCalendarState(date, new Date());
+        dayTitle.classList.add(dayState === "green" ? "preview-day-active" : "preview-day-inactive");
+      }
       card.appendChild(dayTitle);
 
       const message = document.createElement("div");
@@ -379,7 +393,7 @@ async function renderStartMenuPreviews() {
 
 async function renderHomeMenuPreviews() {
   if (homePreviewLoading) homePreviewLoading.hidden = true;
-  await renderPreviewCollection(homeMenuPreviews, getTargetWeekDates(new Date()), false, true, false);
+  await renderPreviewCollection(homeMenuPreviews, getTargetWeekDates(new Date()), true, true, false, true);
 }
 
 function showPage(pageId) {
@@ -397,6 +411,8 @@ function showPage(pageId) {
 }
 
 function showStartPage() {
+  if (homePreviewModal) homePreviewModal.classList.add("hidden");
+  if (singleDayModal) singleDayModal.classList.add("hidden");
   confirmationModal.classList.add("hidden");
   errorModal.classList.add("hidden");
   leaveModal.classList.add("hidden");
@@ -406,6 +422,8 @@ function showStartPage() {
 }
 
 function showCalendarPage() {
+  if (homePreviewModal) homePreviewModal.classList.add("hidden");
+  if (singleDayModal) singleDayModal.classList.add("hidden");
   confirmationModal.classList.add("hidden");
   errorModal.classList.add("hidden");
   leaveModal.classList.add("hidden");
@@ -414,13 +432,25 @@ function showCalendarPage() {
   renderStartMenuPreviews();
 }
 
-function openPreviewDate(dateString) {
-  // A preview is a shortcut into that specific date's menu section.
-  // Keep the calendar selection in sync with the date being opened.
-  selectedCalendarDates.clear();
-  selectedCalendarDates.add(dateString);
-  updateCalendarSelectionUI();
-  showOrderPage([dateString], dateString);
+function showHomePreviewNotice() {
+  if (homePreviewModal) homePreviewModal.classList.remove("hidden");
+}
+
+function continueFromHomePreview() {
+  if (homePreviewModal) homePreviewModal.classList.add("hidden");
+  showCalendarPage();
+}
+
+function confirmSingleDayOrder() {
+  const dateString = pendingSingleDate;
+  pendingSingleDate = "";
+  if (singleDayModal) singleDayModal.classList.add("hidden");
+  if (dateString) showOrderPage([dateString]);
+}
+
+function cancelSingleDayOrder() {
+  pendingSingleDate = "";
+  if (singleDayModal) singleDayModal.classList.add("hidden");
 }
 
 function showOrderPage(dateStrings, expandedDateString = null) {
@@ -975,11 +1005,39 @@ document.addEventListener("DOMContentLoaded", () => {
   if (calendarHomeButton) calendarHomeButton.addEventListener("click", showStartPage);
   if (nextCalendarButton) nextCalendarButton.addEventListener("click", () => {
     if (selectedCalendarDates.size === 0) return;
+    if (selectedCalendarDates.size === 1) {
+      pendingSingleDate = [...selectedCalendarDates][0];
+      singleDayModal.classList.remove("hidden");
+      return;
+    }
     showOrderPage([...selectedCalendarDates]);
   });
   if (deliveryToggle) deliveryToggle.addEventListener("click", toggleDeliveryDetails);
 
   bindNavigationButtons();
+
+  const brandHeader = document.querySelector(".brand-header");
+  if (brandHeader) {
+    brandHeader.setAttribute("role", "button");
+    brandHeader.setAttribute("tabindex", "0");
+    brandHeader.setAttribute("aria-label", "Zur Startseite");
+    brandHeader.addEventListener("click", () => {
+      if (menuPage && !menuPage.hidden && !hasMenuSelections()) showStartPage();
+      else if (menuPage && !menuPage.hidden) requestLeaveMenuPage("startPage");
+      else showStartPage();
+    });
+    brandHeader.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        brandHeader.click();
+      }
+    });
+  }
+
+  if (homePreviewContinueButton) homePreviewContinueButton.addEventListener("click", continueFromHomePreview);
+  if (singleDayYesButton) singleDayYesButton.addEventListener("click", confirmSingleDayOrder);
+  if (singleDayNoButton) singleDayNoButton.addEventListener("click", cancelSingleDayOrder);
+
   orderForm.addEventListener("submit", submitOrder);
 
   // Start page is the initial page.
