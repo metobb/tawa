@@ -396,7 +396,7 @@ async function renderStartMenuPreviews() {
   const activeDates = getActiveCalendarDates(new Date());
   if (startPreviewLoading) startPreviewLoading.hidden = true;
   // Calendar-page previews are direct shortcuts to the selected day's menu.
-  // The menu accordion remains collapsed when opened from a preview.
+  // A preview opens its corresponding day menu immediately.
   await renderPreviewCollection(
     startMenuPreviews,
     activeDates,
@@ -404,7 +404,10 @@ async function renderStartMenuPreviews() {
     false,
     true,
     false,
-    date => showOrderPage([displayDate(date)])
+    date => {
+      const dateString = displayDate(date);
+      showOrderPage([dateString], dateString);
+    }
   );
 }
 
@@ -462,7 +465,7 @@ function confirmSingleDayOrder() {
   const dateString = pendingSingleDate;
   pendingSingleDate = "";
   if (singleDayModal) singleDayModal.classList.add("hidden");
-  if (dateString) showOrderPage([dateString]);
+  if (dateString) showOrderPage([dateString], dateString);
 }
 
 function cancelSingleDayOrder() {
